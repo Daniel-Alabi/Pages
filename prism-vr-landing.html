@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISM ONE — See past the screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#08070F;
+    --void-2:#0E0C1C;
+    --ink:#EDEAF6;
+    --ink-dim:#9B95B4;
+    --line:rgba(155,149,180,.18);
+    --spectral-a:#FF4D6D;
+    --spectral-b:#4DE1FF;
+    --spectral-c:#B14DFF;
+    --max:1180px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--void);
+    color:var(--ink);
+    font-family:'Outfit',sans-serif;
+    font-weight:300;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--spectral-c);color:var(--void)}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--spectral-b);outline-offset:3px;border-radius:2px}
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    backdrop-filter:blur(14px);
+    background:rgba(8,7,15,.55);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:var(--max);margin:0 auto;padding:18px 32px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .logo{
+    font-family:'Unbounded',sans-serif;font-weight:800;font-size:15px;
+    letter-spacing:.22em;
+  }
+  .logo span{color:var(--spectral-b)}
+  .nav-links{display:flex;gap:36px;align-items:center;font-size:14px;color:var(--ink-dim)}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{
+    display:inline-block;
+    font-family:'Space Mono',monospace;font-size:13px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:12px 26px;border-radius:100px;
+    background:var(--ink);color:var(--void);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--ink), 0 8px 30px rgba(177,77,255,.35)}
+  .btn-ghost{
+    background:transparent;color:var(--ink);
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .btn-ghost:hover{box-shadow:inset 0 0 0 1px var(--ink-dim)}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;min-height:100vh;
+    display:flex;align-items:center;
+    padding:140px 0 80px;
+    cursor:none;
+  }
+  @media (pointer:coarse){.hero{cursor:auto}}
+  /* the dull "reality" layer */
+  .hero-grid{
+    position:absolute;inset:0;
+    background-image:radial-gradient(rgba(155,149,180,.22) 1px, transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:linear-gradient(to bottom, black 70%, transparent);
+            mask-image:linear-gradient(to bottom, black 70%, transparent);
+  }
+  /* the vivid "virtual" layer, revealed only through the lens */
+  .hero-world{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(60% 80% at 70% 30%, rgba(77,225,255,.35), transparent 60%),
+      radial-gradient(50% 70% at 25% 70%, rgba(255,77,109,.32), transparent 60%),
+      radial-gradient(70% 60% at 50% 50%, rgba(177,77,255,.4), transparent 65%),
+      var(--void-2);
+    background-image:
+      radial-gradient(60% 80% at 70% 30%, rgba(77,225,255,.35), transparent 60%),
+      radial-gradient(50% 70% at 25% 70%, rgba(255,77,109,.32), transparent 60%),
+      radial-gradient(70% 60% at 50% 50%, rgba(177,77,255,.4), transparent 65%),
+      repeating-linear-gradient(115deg, rgba(237,234,246,.05) 0 1px, transparent 1px 60px);
+    -webkit-mask-image:radial-gradient(circle 210px at var(--mx,75%) var(--my,40%), black 0 62%, transparent 100%);
+            mask-image:radial-gradient(circle 210px at var(--mx,75%) var(--my,40%), black 0 62%, transparent 100%);
+    transition:opacity .4s;
+  }
+  .lens-ring{
+    position:absolute;width:420px;height:420px;border-radius:50%;
+    border:1px solid rgba(237,234,246,.35);
+    box-shadow:0 0 60px rgba(177,77,255,.25) inset, 0 0 40px rgba(77,225,255,.12);
+    transform:translate(-50%,-50%);
+    left:var(--mx,75%);top:var(--my,40%);
+    pointer-events:none;
+    z-index:3;
+  }
+  .lens-ring::after{
+    content:'FIELD OF VIEW · 110°';
+    position:absolute;top:-28px;left:50%;transform:translateX(-50%);
+    font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.25em;
+    color:var(--ink-dim);white-space:nowrap;
+  }
+  .hero-inner{position:relative;z-index:4;width:100%}
+  .eyebrow{
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:400;
+    letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim);
+    display:flex;align-items:center;gap:14px;margin-bottom:28px;
+  }
+  .eyebrow::before{content:'';width:36px;height:1px;background:var(--spectral-b)}
+  h1{
+    font-family:'Unbounded',sans-serif;font-weight:800;
+    font-size:clamp(44px, 8.2vw, 108px);
+    line-height:1.02;letter-spacing:-.01em;
+    max-width:11ch;
+  }
+  /* chromatic aberration signature */
+  .chroma{position:relative;display:inline-block}
+  .chroma::before,.chroma::after{
+    content:attr(data-text);
+    position:absolute;inset:0;z-index:-1;
+  }
+  .chroma::before{color:var(--spectral-a);transform:translate(-3px,1px);opacity:.8}
+  .chroma::after{color:var(--spectral-b);transform:translate(3px,-1px);opacity:.8}
+  .hero p{
+    margin:32px 0 44px;max-width:46ch;
+    font-size:18px;color:var(--ink-dim);
+  }
+  .hero-ctas{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  .hero-note{
+    margin-top:56px;
+    font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;
+    color:var(--ink-dim);text-transform:uppercase;
+  }
+
+  /* ---------- TICKER ---------- */
+  .ticker{
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    overflow:hidden;padding:18px 0;
+    font-family:'Space Mono',monospace;font-size:13px;letter-spacing:.2em;
+    color:var(--ink-dim);text-transform:uppercase;white-space:nowrap;
+  }
+  .ticker-track{display:inline-block;animation:tick 30s linear infinite}
+  .ticker-track span{margin:0 34px}
+  .ticker-track b{color:var(--ink);font-weight:400}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:120px 0}
+  .sec-head{margin-bottom:64px;max-width:640px}
+  h2{
+    font-family:'Unbounded',sans-serif;font-weight:600;
+    font-size:clamp(28px,4vw,44px);line-height:1.15;margin-top:18px;
+  }
+  .sec-head p{margin-top:18px;color:var(--ink-dim);font-size:17px}
+
+  /* optics features */
+  .optics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+  .optic{
+    background:var(--void);padding:44px 36px;
+    transition:background .35s;
+  }
+  .optic:hover{background:var(--void-2)}
+  .optic-glyph{
+    width:56px;height:56px;margin-bottom:28px;
+    color:var(--spectral-b);
+  }
+  .optic:nth-child(2) .optic-glyph{color:var(--spectral-c)}
+  .optic:nth-child(3) .optic-glyph{color:var(--spectral-a)}
+  .optic h3{font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;margin-bottom:14px}
+  .optic p{color:var(--ink-dim);font-size:15px}
+
+  /* ---------- SPEC SHEET ---------- */
+  .specs{background:var(--void-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .spec-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-left:1px solid var(--line);border-top:1px solid var(--line);
+  }
+  .spec{
+    border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:32px 28px;
+  }
+  .spec dt{
+    font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ink-dim);margin-bottom:14px;
+  }
+  .spec dd{
+    font-family:'Unbounded',sans-serif;font-weight:600;font-size:26px;line-height:1.1;
+  }
+  .spec dd small{
+    display:block;font-family:'Outfit',sans-serif;font-weight:300;
+    font-size:13px;color:var(--ink-dim);margin-top:8px;letter-spacing:0;
+  }
+
+  /* ---------- CTA ---------- */
+  .cta-final{text-align:center;position:relative;overflow:hidden}
+  .cta-final::before{
+    content:'';position:absolute;left:50%;top:50%;
+    width:700px;height:700px;transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(177,77,255,.18), transparent 65%);
+    pointer-events:none;
+  }
+  .cta-final h2{max-width:18ch;margin:18px auto 0}
+  .price{
+    font-family:'Space Mono',monospace;font-size:14px;letter-spacing:.18em;
+    color:var(--ink-dim);margin:28px 0 36px;text-transform:uppercase;
+  }
+  .price b{color:var(--ink);font-weight:700}
+
+  footer{
+    border-top:1px solid var(--line);padding:40px 0;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.15em;
+    color:var(--ink-dim);text-transform:uppercase;
+  }
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;width:100%}
+
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    .reveal{opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+  @media (max-width:900px){
+    .optics{grid-template-columns:1fr}
+    .spec-grid{grid-template-columns:repeat(2,1fr)}
+    .nav-links a:not(.btn){display:none}
+    .lens-ring{width:280px;height:280px}
+    .hero-world{
+      -webkit-mask-image:radial-gradient(circle 140px at var(--mx,70%) var(--my,35%), black 0 62%, transparent 100%);
+              mask-image:radial-gradient(circle 140px at var(--mx,70%) var(--my,35%), black 0 62%, transparent 100%);
+    }
+  }
+  @media (max-width:560px){
+    .spec-grid{grid-template-columns:1fr}
+    section{padding:80px 0}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="#">PRISM<span>·</span>ONE</a>
+    <div class="nav-links">
+      <a href="#optics">Optics</a>
+      <a href="#specs">Spec sheet</a>
+      <a href="#preorder" class="btn">Preorder</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-world" aria-hidden="true"></div>
+  <div class="lens-ring" aria-hidden="true"></div>
+
+  <div class="wrap hero-inner">
+    <div class="eyebrow">Prism One · Spatial headset</div>
+    <h1>See past <br><span class="chroma" data-text="the screen.">the screen.</span></h1>
+    <p>The flat rectangle had a good run. Prism One replaces it with a 110° field of view, pancake optics sharp to the very edge, and a display that refreshes faster than your eyes can ask. Move your cursor — that's the difference.</p>
+    <div class="hero-ctas">
+      <a href="#preorder" class="btn">Preorder — $499</a>
+      <a href="#specs" class="btn btn-ghost">Read the spec sheet</a>
+    </div>
+    <div class="hero-note">Ships September 2026 · 30-day returns</div>
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span><b>4K</b> per eye</span><span><b>120 Hz</b> refresh</span><span><b>110°</b> FOV</span><span><b>465 g</b> total weight</span><span><b>&lt;12 ms</b> motion-to-photon</span><span><b>6DoF</b> inside-out tracking</span>
+    <span><b>4K</b> per eye</span><span><b>120 Hz</b> refresh</span><span><b>110°</b> FOV</span><span><b>465 g</b> total weight</span><span><b>&lt;12 ms</b> motion-to-photon</span><span><b>6DoF</b> inside-out tracking</span>
+  </div>
+</div>
+
+<section id="optics">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Built around your eyes</div>
+      <h2>Optics first. Everything else second.</h2>
+      <p>Most headsets are computers with lenses bolted on. Prism One was engineered the other way around — the optical path was locked first, and every component earned its place behind it.</p>
+    </div>
+    <div class="optics">
+      <div class="optic reveal">
+        <svg class="optic-glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="28" cy="28" r="18"/><circle cx="28" cy="28" r="10"/><circle cx="28" cy="28" r="3" fill="currentColor"/></svg>
+        <h3>Pancake lens stack</h3>
+        <p>A folded three-element optic that's edge-to-edge sharp, with 40% less glass between you and the world. No sweet spot to hunt for — the whole lens is the sweet spot.</p>
+      </div>
+      <div class="optic reveal">
+        <svg class="optic-glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 28c6-10 14-15 20-15s14 5 20 15c-6 10-14 15-20 15S14 38 8 28z"/><circle cx="28" cy="28" r="6"/></svg>
+        <h3>Eye-tracked rendering</h3>
+        <p>Foveated rendering paints full detail exactly where you're looking and saves power everywhere else. You never notice it working — that's the point.</p>
+      </div>
+      <div class="optic reveal">
+        <svg class="optic-glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 36c0-9 7-16 16-16s16 7 16 16"/><path d="M20 36c0-5 3.6-8 8-8s8 3 8 8"/><circle cx="28" cy="40" r="2" fill="currentColor"/></svg>
+        <h3>Open spatial audio</h3>
+        <p>Off-ear drivers place sound in the room, not in your head. You stay aware of your space while the soundstage stays exactly where the world puts it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="specs" id="specs">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Datasheet</div>
+      <h2>Numbers we'll stand behind.</h2>
+    </div>
+    <dl class="spec-grid reveal">
+      <div class="spec"><dt>Resolution</dt><dd>4K × 4K<small>per eye, micro-OLED</small></dd></div>
+      <div class="spec"><dt>Refresh rate</dt><dd>120 Hz<small>90 Hz battery-saver mode</small></dd></div>
+      <div class="spec"><dt>Field of view</dt><dd>110°<small>horizontal, 96° vertical</small></dd></div>
+      <div class="spec"><dt>Weight</dt><dd>465 g<small>balanced front-to-back</small></dd></div>
+      <div class="spec"><dt>Latency</dt><dd>&lt;12 ms<small>motion-to-photon</small></dd></div>
+      <div class="spec"><dt>Tracking</dt><dd>6DoF<small>inside-out, 4 cameras</small></dd></div>
+      <div class="spec"><dt>Battery</dt><dd>3.5 hrs<small>hot-swappable rear cell</small></dd></div>
+      <div class="spec"><dt>Compute</dt><dd>XR3 Gen 2<small>+ Wi-Fi 7 PC streaming</small></dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="cta-final" id="preorder">
+  <div class="wrap reveal">
+    <div class="eyebrow" style="justify-content:center">Limited first run</div>
+    <h2>The screen was a window. This is a door.</h2>
+    <div class="price"><b>$499</b> · $50 reserves your unit · fully refundable</div>
+    <a href="#" class="btn">Reserve Prism One</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>PRISM·ONE © 2026</span>
+    <span>Designed for human eyes</span>
+  </div>
+</footer>
+
+<script>
+  // Lens portal follows the cursor in the hero
+  const hero = document.getElementById('hero');
+  const world = document.querySelector('.hero-world');
+  const ring = document.querySelector('.lens-ring');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!reduce) {
+    hero.addEventListener('pointermove', e => {
+      const r = hero.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100 + '%';
+      const y = ((e.clientY - r.top) / r.height) * 100 + '%';
+      world.style.setProperty('--mx', x);
+      world.style.setProperty('--my', y);
+      ring.style.left = x;
+      ring.style.top = y;
+    });
+  }
+
+  // Scroll reveals
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
