@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANAX-4 — Odonata-Derived Air Taxi: Design Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --membrane:#E9EDE9;
+  --membrane-2:#F4F6F2;
+  --ink:#141F1D;
+  --vein:#6D7B74;
+  --vein-soft:#B9C3BC;
+  --eye:#0F6560;
+  --eye-bright:#1A8E85;
+  --stigma:#7A4A22;
+  --warn:#8C3A2E;
+  --rule:rgba(20,31,29,.14);
+  --shadow:0 1px 0 rgba(20,31,29,.06);
+  --maxw:1060px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--membrane);
+  color:var(--ink);
+  font-family:"Newsreader",Georgia,serif;
+  font-size:17.5px;
+  line-height:1.62;
+  font-weight:400;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 80% -5%, rgba(26,142,133,.09), transparent 70%),
+    radial-gradient(ellipse 700px 400px at 5% 30%, rgba(122,74,34,.05), transparent 70%);
+  background-attachment:fixed;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px 120px}
+
+/* ---------- type roles ---------- */
+h1,h2,h3,.eyebrow,.stat-n,.tag,.btn{font-family:"Bricolage Grotesque",Helvetica,Arial,sans-serif}
+.mono,table,.spec,.num,figcaption,.rail-n{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+.eyebrow{
+  font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--eye);margin:0 0 10px;
+}
+
+/* ---------- masthead ---------- */
+.masthead{padding:64px 0 30px;border-bottom:1.5px solid var(--ink)}
+h1{
+  font-size:clamp(38px,7.4vw,76px);line-height:.94;letter-spacing:-.035em;
+  font-weight:800;margin:0 0 18px;
+}
+h1 .sub{display:block;font-weight:300;font-size:.42em;letter-spacing:-.01em;color:var(--vein);margin-top:14px;line-height:1.25}
+.deck{font-size:clamp(18px,2.4vw,22px);line-height:1.5;max-width:62ch;color:var(--ink);margin:0 0 26px}
+.deck em{color:var(--eye);font-style:italic}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px 26px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--vein);font-family:"IBM Plex Mono",monospace;padding-bottom:6px}
+
+/* ---------- hero figure ---------- */
+figure{margin:0}
+.hero-fig{margin:34px 0 8px;background:var(--membrane-2);border:1px solid var(--rule);padding:18px 14px 8px}
+.hero-fig svg{width:100%;height:auto;display:block}
+figcaption{font-size:12.5px;line-height:1.55;color:var(--vein);padding:12px 6px 8px;border-top:1px solid var(--rule);margin-top:8px}
+figcaption b{color:var(--ink);font-weight:600}
+
+/* ---------- section rail (longitudinal vein + cross-veins) ---------- */
+section{position:relative;padding:54px 0 8px;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:none}
+.rail-n{
+  font-size:12px;font-weight:600;color:var(--eye);letter-spacing:.1em;
+  display:block;margin-bottom:6px;
+}
+h2{
+  font-size:clamp(25px,4vw,38px);line-height:1.06;letter-spacing:-.025em;font-weight:700;
+  margin:0 0 8px;max-width:24ch;
+}
+h2 .h2-tail{color:var(--vein-soft);font-weight:300}
+.lede{font-size:19px;max-width:66ch;color:var(--ink);margin:0 0 22px}
+h3{font-size:16px;font-weight:700;letter-spacing:.02em;margin:30px 0 8px;text-transform:none}
+p{max-width:70ch;margin:0 0 16px}
+ul,ol{max-width:70ch;padding-left:20px;margin:0 0 18px}
+li{margin-bottom:9px}
+strong{font-weight:600}
+code,.mono-in{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:rgba(15,101,96,.09);padding:1px 5px;border-radius:2px;color:var(--eye)}
+
+/* ---------- wing-cell cards with pterostigma marker ---------- */
+.cells{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px;margin:22px 0 26px}
+.cell{
+  position:relative;background:var(--membrane-2);border:1px solid var(--rule);
+  padding:20px 18px 18px;box-shadow:var(--shadow);
+}
+.cell .stigma{
+  position:absolute;top:0;right:0;width:34px;height:9px;
+  border:1.5px solid var(--stigma);
+}
+.cell .stigma.solid{background:var(--stigma)}
+.cell .stigma.half{background:linear-gradient(90deg,var(--stigma) 50%,transparent 50%)}
+.cell h4{
+  font-family:"Bricolage Grotesque",sans-serif;font-size:15.5px;font-weight:700;
+  margin:0 0 6px;letter-spacing:-.005em;padding-right:44px;line-height:1.2;
+}
+.cell .bio{font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--eye);letter-spacing:.02em;margin:0 0 10px}
+.cell p{font-size:15px;line-height:1.5;margin:0;max-width:none;color:#2B3835}
+
+.stigma-key{display:flex;flex-wrap:wrap;gap:18px;font-size:12px;font-family:"IBM Plex Mono",monospace;color:var(--vein);margin:-8px 0 30px;align-items:center}
+.stigma-key i{display:inline-block;width:26px;height:8px;border:1.5px solid var(--stigma);vertical-align:middle;margin-right:7px}
+.stigma-key i.solid{background:var(--stigma)}
+.stigma-key i.half{background:linear-gradient(90deg,var(--stigma) 50%,transparent 50%)}
+
+/* ---------- tables ---------- */
+.tbl-scroll{overflow-x:auto;margin:0 0 26px;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+caption{text-align:left;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--vein);padding-bottom:9px}
+th{
+  text-align:left;font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--eye);border-bottom:1.5px solid var(--ink);padding:8px 12px 8px 0;vertical-align:bottom;
+}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.45}
+td:first-child{font-weight:500;color:var(--ink)}
+tbody tr:hover{background:rgba(26,142,133,.05)}
+.v-keep{color:var(--eye);font-weight:600}
+.v-adapt{color:var(--stigma);font-weight:600}
+.v-drop{color:var(--warn);font-weight:600}
+
+/* ---------- callouts ---------- */
+.note{
+  border-left:3px solid var(--eye);background:rgba(15,101,96,.055);
+  padding:16px 18px;margin:22px 0;font-size:16px;
+}
+.note.warn{border-left-color:var(--warn);background:rgba(140,58,46,.055)}
+.note p{margin:0;max-width:64ch}
+.note p+p{margin-top:11px}
+.note .tag{
+  display:block;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--eye);margin-bottom:7px;
+}
+.note.warn .tag{color:var(--warn)}
+
+/* ---------- math block ---------- */
+.calc{
+  background:#111C1A;color:#CDD8D3;font-family:"IBM Plex Mono",monospace;
+  font-size:13px;line-height:1.85;padding:20px 22px;overflow-x:auto;margin:20px 0 24px;
+}
+.calc .k{color:#5FC9BE}
+.calc .c{color:#7C8C86}
+.calc .r{color:#E0B37A}
+
+/* ---------- stat strip ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin:26px 0}
+.stat{background:var(--membrane-2);padding:16px 14px}
+.stat-n{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1;display:block}
+.stat-n span{font-size:13px;font-weight:500;color:var(--vein);margin-left:2px}
+.stat-l{font-size:10.5px;font-family:"IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--vein);margin-top:7px;display:block;line-height:1.4}
+
+/* ---------- diagram frames ---------- */
+.diagram{margin:26px 0;background:var(--membrane-2);border:1px solid var(--rule);padding:16px 12px 6px}
+.diagram svg{width:100%;height:auto;display:block}
+
+/* ---------- footer ---------- */
+footer{margin-top:70px;padding-top:26px;border-top:1.5px solid var(--ink);font-size:13px;color:var(--vein);font-family:"IBM Plex Mono",monospace;line-height:1.7}
+footer b{color:var(--ink);font-weight:600}
+
+/* ---------- motion ---------- */
+.map-line{stroke-dasharray:4 4;opacity:0;animation:draw .9s ease forwards}
+.map-line:nth-of-type(1){animation-delay:.25s}
+.map-line:nth-of-type(2){animation-delay:.4s}
+.map-line:nth-of-type(3){animation-delay:.55s}
+.map-line:nth-of-type(4){animation-delay:.7s}
+.map-line:nth-of-type(5){animation-delay:.85s}
+@keyframes draw{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .map-line{animation:none;opacity:1}
+  *{transition:none!important}
+}
+a{color:var(--eye)}
+a:focus-visible,.cell:focus-visible{outline:2.5px solid var(--eye-bright);outline-offset:3px}
+@media(max-width:640px){
+  body{font-size:16.5px}
+  .wrap{padding:0 17px 80px}
+  .masthead{padding:40px 0 24px}
+  section{padding:40px 0 6px}
+  .calc{font-size:11.5px;padding:15px 14px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Concept Design Dossier · Rev A</p>
+  <h1>ANAX-4
+    <span class="sub">A four-station tilt-proprotor air taxi derived from <i>Anax junius</i>, the green darner</span>
+  </h1>
+  <p class="deck">The dragonfly is the best hovering, intercepting, and long-migrating flyer that evolution has produced. It is also the wrong size, the wrong Reynolds number, and the wrong actuator technology for carrying four people across a city. This dossier separates <em>what the dragonfly does</em> from <em>how the dragonfly does it</em> — and copies only the first.</p>
+  <div class="meta-row">
+    <span>Method: functional biomimicry</span>
+    <span>Class: powered-lift, 4 pax</span>
+    <span>Status: concept, pre-preliminary</span>
+  </div>
+</header>
+
+<figure class="hero-fig">
+<svg viewBox="0 0 720 340" role="img" aria-label="Side-by-side mapping of dragonfly morphology to the ANAX-4 vehicle planform, with five numbered correspondence lines.">
+  <defs>
+    <style>
+      .memb{fill:rgba(26,142,133,.10);stroke:#0F6560;stroke-width:1.1}
+      .body{fill:#141F1D}
+      .vn{stroke:#0F6560;stroke-width:.5;fill:none;opacity:.55}
+      .ac{fill:none;stroke:#141F1D;stroke-width:1.5;stroke-linejoin:round}
+      .acf{fill:rgba(20,31,29,.08);stroke:#141F1D;stroke-width:1.5}
+      .disc{fill:rgba(15,101,96,.13);stroke:#0F6560;stroke-width:1.1;stroke-dasharray:3 3}
+      .lbl{font-family:"IBM Plex Mono",monospace;font-size:9.5px;fill:#6D7B74;letter-spacing:.05em}
+      .ttl{font-family:"Bricolage Grotesque",sans-serif;font-size:12px;font-weight:700;fill:#141F1D;letter-spacing:.06em}
+      .num{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;fill:#FFF}
+      .numbg{fill:#0F6560}
+      .ml{stroke:#7A4A22;stroke-width:1;fill:none}
+    </style>
+  </defs>
+
+  <text x="8" y="16" class="ttl">ANAX JUNIUS</text>
+  <text x="420" y="16" class="ttl">ANAX-4</text>
+  <text x="8" y="330" class="lbl">morphology — what evolution built</text>
+  <text x="420" y="330" class="lbl">architecture — what the physics allows</text>
+
+  <!-- ============ DRAGONFLY ============ -->
+  <g transform="translate(0,26)">
+    <!-- forewings -->
+    <path class="memb" d="M159 72 C 200 60, 252 54, 292 57 C 296 62, 290 71, 271 78 C 231 89, 184 90, 160 86 Z"/>
+    <path class="memb" d="M141 72 C 100 60, 48 54, 8 57 C 4 62, 10 71, 29 78 C 69 89, 116 90, 140 86 Z"/>
+    <!-- hindwings -->
+    <path class="memb" d="M159 98 C 200 92, 250 85, 286 88 C 292 93, 285 101, 264 107 C 224 116, 180 113, 160 108 Z"/>
+    <path class="memb" d="M141 98 C 100 92, 50 85, 14 88 C 8 93, 15 101, 36 107 C 76 116, 120 113, 140 108 Z"/>
+    <!-- venation -->
+    <g class="vn">
+      <path d="M162 78 L 285 62 M 168 82 L 262 72 M 175 85 L 240 78"/>
+      <path d="M138 78 L 15 62 M 132 82 L 38 72 M 125 85 L 60 78"/>
+      <path d="M162 103 L 279 92 M 170 106 L 250 98"/>
+      <path d="M138 103 L 21 92 M 130 106 L 50 98"/>
+      <path d="M190 68 L 196 86 M 220 63 L 226 84 M 250 59 L 254 80"/>
+      <path d="M110 68 L 104 86 M 80 63 L 74 84 M 50 59 L 46 80"/>
+    </g>
+    <!-- pterostigmata -->
+    <g fill="#7A4A22">
+      <path d="M266 60 L 285 57.5 L 286 63 L 267 65.5 Z"/>
+      <path d="M34 60 L 15 57.5 L 14 63 L 33 65.5 Z"/>
+      <path d="M258 90 L 277 88 L 278 93 L 259 95 Z"/>
+      <path d="M42 90 L 23 88 L 22 93 L 41 95 Z"/>
+    </g>
+    <!-- body -->
+    <path class="body" d="M144 62 L 156 62 L 158 104 L 154 104 L 152 258 L 148 258 L 146 104 L 142 104 Z"/>
+    <ellipse class="body" cx="150" cy="52" rx="14" ry="10.5"/>
+    <circle cx="142" cy="47" r="6.2" fill="#1A8E85"/>
+    <circle cx="158" cy="47" r="6.2" fill="#1A8E85"/>
+    <circle cx="150" cy="41" r="2" fill="#7A4A22"/>
+    <text x="196" y="270" class="lbl">abdomen: long, light, load-free</text>
+    <path class="vn" d="M192 266 L 158 250" stroke-width=".9" opacity=".8"/>
+  </g>
+
+  <!-- ============ MAPPING LINES ============ -->
+  <g transform="translate(0,26)">
+    <path class="ml map-line" d="M292 57 C 340 40, 370 62, 432 82"/>
+    <path class="ml map-line" d="M286 88 C 340 105, 360 150, 424 176"/>
+    <path class="ml map-line" d="M152 250 C 240 268, 480 262, 570 236"/>
+    <path class="ml map-line" d="M164 45 C 250 14, 470 26, 566 56"/>
+    <path class="ml map-line" d="M279 62 C 320 74, 350 96, 447 96"/>
+    <g>
+      <circle cx="356" cy="49" r="7.5" class="numbg"/><text x="353" y="52.5" class="num">1</text>
+      <circle cx="348" cy="127" r="7.5" class="numbg"/><text x="345" y="130.5" class="num">2</text>
+      <circle cx="360" cy="262" r="7.5" class="numbg"/><text x="357" y="265.5" class="num">3</text>
+      <circle cx="366" cy="19" r="7.5" class="numbg"/><text x="363" y="22.5" class="num">4</text>
+      <circle cx="352" cy="86" r="7.5" class="numbg"/><text x="349" y="89.5" class="num">5</text>
+    </g>
+  </g>
+
+  <!-- ============ ANAX-4 PLANFORM ============ -->
+  <g transform="translate(420,26)">
+    <!-- main wing -->
+    <path class="acf" d="M40 172 L 260 172 L 256 190 L 44 190 Z"/>
+    <!-- canard -->
+    <path class="acf" d="M76 88 L 224 88 L 221 102 L 79 102 Z"/>
+    <!-- fuselage pod + boom -->
+    <path class="acf" d="M138 40 C 128 58, 126 96, 128 132 L 128 176 L 145 176 L 145 250 L 155 250 L 155 176 L 172 176 L 172 132 C 174 96, 172 58, 162 40 C 156 32, 144 32, 138 40 Z"/>
+    <!-- V-tail -->
+    <path class="ac" d="M150 250 L 116 282 M 150 250 L 184 282"/>
+    <!-- rotor discs: forward pair (canard) -->
+    <circle class="disc" cx="66" cy="95" r="33"/>
+    <circle class="disc" cx="234" cy="95" r="33"/>
+    <!-- rotor discs: aft pair (main wing), wider + staggered outboard -->
+    <circle class="disc" cx="44" cy="181" r="33"/>
+    <circle class="disc" cx="256" cy="181" r="33"/>
+    <!-- nacelles -->
+    <g fill="#141F1D">
+      <rect x="60" y="86" width="12" height="19" rx="3"/><rect x="228" y="86" width="12" height="19" rx="3"/>
+      <rect x="38" y="172" width="12" height="19" rx="3"/><rect x="250" y="172" width="12" height="19" rx="3"/>
+    </g>
+    <!-- blades hint -->
+    <g stroke="#0F6560" stroke-width="1" opacity=".5">
+      <path d="M66 62 L 66 128 M 39 79 L 93 111 M 39 111 L 93 79"/>
+      <path d="M234 62 L 234 128 M 207 79 L 261 111 M 207 111 L 261 79"/>
+      <path d="M44 148 L 44 214 M 17 165 L 71 197 M 17 197 L 71 165"/>
+      <path d="M256 148 L 256 214 M 229 165 L 283 197 M 229 197 L 283 165"/>
+    </g>
+    <!-- pterostigma mass markers on nacelle pylons -->
+    <g fill="#7A4A22">
+      <rect x="62" y="79" width="8" height="5"/><rect x="230" y="79" width="8" height="5"/>
+      <rect x="40" y="165" width="8" height="5"/><rect x="248" y="165" width="8" height="5"/>
+    </g>
+    <!-- sensor nodes -->
+    <circle cx="140" cy="46" r="3.2" fill="#1A8E85"/>
+    <circle cx="160" cy="46" r="3.2" fill="#1A8E85"/>
+    <circle cx="150" cy="38" r="2.6" fill="#1A8E85"/>
+    <text x="8" y="245" class="lbl">boom: HV bus + battery radiator</text>
+    <text x="8" y="258" class="lbl">+ long tail moment arm</text>
+    <text x="196" y="290" class="lbl">10.6 m span</text>
+  </g>
+</svg>
+<figcaption>
+  <b>Correspondence map.</b>
+  <b>1</b> Forewing pair → forward (canard) lift station.
+  <b>2</b> Hindwing pair → aft lift station, raised and offset outboard so it does not swallow the forward wake.
+  <b>3</b> Abdomen → slender aft boom: long control moment arm, high-voltage bus routing, and battery heat rejection surface.
+  <b>4</b> Compound eyes + ocelli triad → event-camera belt and three independent horizon references.
+  <b>5</b> Pterostigma → outboard tuned masses on the tilt pylons for whirl-flutter margin.
+  Not shown, because it is not copied: the flapping.
+</figcaption>
+</figure>
+
+<!-- ================= 00 ================= -->
+<section>
+  <span class="rail-n">00 / BRIEF</span>
+  <h2>Fix the mission before touching the animal <span class="h2-tail">— otherwise biomimicry becomes decoration</span></h2>
+  <p class="lede">Biomimicry fails most often when the organism is chosen first and the requirements are reverse-engineered to justify it. So the requirement set below was written independently, from the urban air mobility mission, and only then compared against Odonata.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 00.1 — Top-level requirements</caption>
+    <thead><tr><th>Requirement</th><th>Target</th><th>Why this number</th></tr></thead>
+    <tbody>
+      <tr><td>Payload</td><td>4 pax + bags, 400 kg</td><td>Below 4 seats the seat-km economics never close; above 6 the vertiport footprint grows faster than demand.</td></tr>
+      <tr><td>Design range</td><td>90 km, 4 pax<br>130 km, 2 pax</td><td>Covers ~85% of realistic intra-metro city-pair demand. Deliberately not stretched — see §06.</td></tr>
+      <tr><td>Cruise speed</td><td>240 km/h (67 m/s)</td><td>Beats ground transport door-to-door past ~25 km once vertiport dwell time is included.</td></tr>
+      <tr><td>Reserve</td><td>45 km divert + 60 s hover</td><td>Powered-lift reserves are still being argued; this is the conservative end.</td></tr>
+      <tr><td>Hover noise</td><td>≤ 62 dBA @ 100 m</td><td>The binding constraint on whether cities permit the route at all. Treated as a hard requirement, not a goal.</td></tr>
+      <tr><td>Safety target</td><td>10⁻⁹ catastrophic /flight-hour</td><td>EASA SC-VTOL "Enhanced" category — required for flight over congested areas. Drives the whole propulsion architecture.</td></tr>
+      <tr><td>Crew</td><td>Single-pilot certifiable, autonomy-ready</td><td>Autonomy is a software/certification upgrade path, not a structural one.</td></tr>
+      <tr><td>Turnaround</td><td>≤ 12 min incl. charge</td><td>Vertiport pad throughput, not aircraft utilisation, limits network revenue.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <span class="tag">The design question</span>
+    <p>Which of the dragonfly's solutions survive a jump of <strong>five orders of magnitude in mass</strong> and <strong>three orders in Reynolds number</strong> — and which are artefacts of being small?</p>
+  </div>
+</section>
+
+<!-- ================= 01 ================= -->
+<section>
+  <span class="rail-n">01 / BIOLOGY</span>
+  <h2>What the dragonfly actually does</h2>
+  <p class="lede">Eight mechanisms are worth studying. Each card names the biological function first, then the mechanism. The pterostigma mark in the corner records how confident the engineering transfer is — not how interesting the biology is.</p>
+
+  <div class="cells">
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Four independently driven wings</h4>
+      <p class="bio">direct flight musculature</p>
+      <p>Unlike most insects, Odonata attach muscle directly to each wing base. Amplitude, frequency and stroke plane are set per wing. The result is an over-actuated flyer that can hover, fly backwards, and sideslip without reorienting the body.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Fore–hind phase modulation</h4>
+      <p class="bio">counter-stroking ↔ in-phase</p>
+      <p>Roughly 180° out of phase for efficient cruise and hover — the hindwing works in favourable forewing downwash. Shifted toward in-phase for maximum instantaneous force during takeoff and attack. Phase, not throttle, is the primary power lever.</p>
+    </div>
+    <div class="cell"><span class="stigma half"></span>
+      <h4>Leading-edge vortex capture</h4>
+      <p class="bio">unsteady high-lift</p>
+      <p>A stable LEV sits over the wing through the stroke, producing lift coefficients two to four times quasi-steady prediction. This is why insects hover on so little wing area.</p>
+    </div>
+    <div class="cell"><span class="stigma half"></span>
+      <h4>Corrugated wing section</h4>
+      <p class="bio">pleated, not streamlined</p>
+      <p>The wing is a zig-zag in cross-section. Vortices park in the valleys and act as a virtual smooth surface, while the pleats deliver extraordinary spanwise and torsional stiffness for almost no mass.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Pterostigma</h4>
+      <p class="bio">outboard pigmented mass</p>
+      <p>A small heavy cell near the leading edge, outboard. It is a passive aeroelastic device: it shifts the wing's mass axis forward and raises the flutter onset speed, letting the wing be lighter than a flutter-free wing otherwise could be.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Long slender abdomen</h4>
+      <p class="bio">moment arm + radiator</p>
+      <p>Carries almost no load. It buys large pitch and yaw moment arms for negligible mass, shifts the CG in flight, and radiates thoracic heat during sustained flight.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Interception guidance</h4>
+      <p class="bio">TSDNs, ~95% capture rate</p>
+      <p>Target-selective descending neurons drive a predictive interception course — the animal steers to a future intercept point, holding the target on a constant bearing. This is proportional navigation, implemented in about sixteen neurons per side.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Dual attitude sensing</h4>
+      <p class="bio">compound eyes + ocelli triad</p>
+      <p>~30,000 ommatidia for motion and target detection; three simple ocelli providing a fast, coarse, horizon-referenced attitude signal on a separate pathway. Two dissimilar channels, different latencies, different failure modes.</p>
+    </div>
+  </div>
+
+  <div class="stigma-key">
+    <span><i class="solid"></i>transfers cleanly to scale</span>
+    <span><i class="half"></i>transfers only in part — see §03</span>
+    <span><i></i>does not transfer; studied and rejected</span>
+  </div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section>
+  <span class="rail-n">02 / ABSTRACTION</span>
+  <h2>Strip the form away, keep the function</h2>
+  <p>The discipline here is a function–behaviour–structure decomposition. For each biological feature, state the <em>function</em> in physics terms with no biological vocabulary. If the function statement still contains the word "wing", it hasn't been abstracted yet.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 02.1 — Function abstraction</caption>
+    <thead><tr><th>Feature</th><th>Function, stated physically</th><th>Engineering primitive</th></tr></thead>
+    <tbody>
+      <tr><td>Four driven wings</td><td>Distribute force generation across four independently commandable stations with distinct moment arms</td><td>Over-actuated distributed propulsion</td></tr>
+      <tr><td>Fore–hind phasing</td><td>Modulate the aerodynamic interaction between upstream and downstream force producers</td><td>Wake management + rotor clocking</td></tr>
+      <tr><td>LEV capture</td><td>Exceed steady-state lift limits using unsteady flow</td><td>(Re-dependent — see §03)</td></tr>
+      <tr><td>Corrugation</td><td>Maximise bending and torsional stiffness per unit mass</td><td>Corrugated-web composite spar</td></tr>
+      <tr><td>Pterostigma</td><td>Place discrete outboard mass to move the mass axis and raise flutter speed</td><td>Tuned mass balance / flutter damper</td></tr>
+      <tr><td>Abdomen</td><td>Long, low-mass structure providing moment arm, routing and heat rejection area</td><td>Structural boom with integrated bus + radiator</td></tr>
+      <tr><td>Interception</td><td>Null the line-of-sight rotation rate to a moving point</td><td>Proportional navigation guidance</td></tr>
+      <tr><td>Eyes + ocelli</td><td>Two dissimilar attitude/motion channels with different latency and failure signatures</td><td>Dissimilar redundant state estimation</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section>
+  <span class="rail-n">03 / THE SCALING FILTER</span>
+  <h2>Why the flapping has to go</h2>
+  <p class="lede">This is the section that decides the whole aircraft. Three independent physical arguments each kill flapping flight at passenger scale. Any one of them would be sufficient.</p>
+
+  <h3>Argument 1 — Reynolds number</h3>
+  <p>A green darner cruises with a chord Reynolds number around 2,000–10,000. In that regime, boundary layers separate readily, conventional airfoils perform badly, and unsteady vortex capture is genuinely the best available strategy. A 2.3 t vehicle at 67 m/s with a 1.1 m chord operates near <code>Re ≈ 5 × 10⁶</code>.</p>
+
+  <div class="calc">
+<span class="c"># Chord Reynolds number, ANAX-4 cruise</span>
+Re = ρ·V·c / μ
+   = (1.225 × 67 × 1.10) / 1.81e-5
+   = <span class="r">4.99 × 10⁶</span>     <span class="c">— dragonfly: ~5 × 10³</span>
+
+<span class="c"># The regime the LEV advantage lives in ends around Re ~ 1e4.</span>
+<span class="c"># At 5e6 an attached-flow airfoil already reaches L/D &gt; 60 in 2-D.</span>
+<span class="k">Verdict:</span> unsteady high-lift solves a problem we do not have.</div>
+
+  <h3>Argument 2 — wing inertia and flapping frequency</h3>
+  <p>Flapping frequency scales roughly as <code>f ∝ m^(-1/3)</code> across flying animals. Extrapolating from a 0.5 g dragonfly at ~35 Hz gives a laughable answer at 2,300 kg — and the reciprocating inertial loads make it worse than laughable.</p>
+
+  <div class="calc">
+<span class="c"># Greenewalt-type frequency scaling</span>
+f₂ = f₁ · (m₁/m₂)^(1/3)
+   = 35 · (0.0005 / 2300)^(1/3)
+   = 35 · (2.17e-7)^(1/3)
+   = 35 × 0.0060
+   = <span class="r">0.21 Hz</span>     <span class="c">— one stroke every 4.8 seconds</span>
+
+<span class="c"># Peak inertial torque of a reciprocating wing, half-amplitude θ₀:</span>
+T_peak = I · θ₀ · (2πf)²
+<span class="c"># For a 5 m, 90 kg wing: I ≈ 750 kg·m², θ₀ = 0.6 rad</span>
+<span class="c"># Even at 0.21 Hz this is ~790 N·m of pure inertial reversal,</span>
+<span class="c"># twice per cycle, for the entire life of the airframe.</span>
+<span class="k">Verdict:</span> a fatigue-driven structure with no aerodynamic payoff.</div>
+
+  <div class="note warn">
+    <span class="tag">The scale trap</span>
+    <p>At 0.21 Hz there is no unsteady aerodynamics left. The reduced frequency <code>k = πfc/V</code> collapses to ~0.005, which is quasi-steady flow by any definition. You would carry all of flapping's structural cost and receive none of its aerodynamic benefit. <strong>Flapping is not a scaled-down version of a good idea; it is a good idea that only exists at small scale.</strong></p>
+  </div>
+
+  <h3>Argument 3 — certification and fatigue</h3>
+  <p>A rotor is a steady-load device with well-understood fatigue methodology and sixty years of certification precedent. A flapping wing is a fully reversing-load primary structure with no certification basis, no established damage-tolerance approach, and no inspection standard. Under a 10⁻⁹ target this is not a schedule risk — it is a programme-ending one.</p>
+
+  <h3>The filter applied</h3>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 03.1 — Transfer decisions</caption>
+    <thead><tr><th>Mechanism</th><th>Verdict</th><th>Reasoning</th></tr></thead>
+    <tbody>
+      <tr><td>Four-station force topology</td><td class="v-keep">KEEP</td><td>Scale-invariant. Moment arms and redundancy don't care about Reynolds number.</td></tr>
+      <tr><td>Fore–hind phase control</td><td class="v-adapt">ADAPT</td><td>Becomes rotor <em>clocking</em> and tilt sequencing, not stroke phase. §08.</td></tr>
+      <tr><td>Flapping actuation</td><td class="v-drop">REJECT</td><td>All three arguments above.</td></tr>
+      <tr><td>LEV capture</td><td class="v-drop">REJECT</td><td>Re-dependent. Nothing to gain at 5 × 10⁶.</td></tr>
+      <tr><td>Aerodynamic corrugation</td><td class="v-drop">REJECT</td><td>Corrugated sections beat smooth ones <em>only</em> below Re ≈ 10⁴. Above it they are a drag penalty.</td></tr>
+      <tr><td>Structural corrugation</td><td class="v-keep">KEEP</td><td>Stiffness-per-mass is scale-invariant. Corrugated composite webs are already good practice; the dragonfly validates the geometry. §07.</td></tr>
+      <tr><td>Pterostigma mass balance</td><td class="v-keep">KEEP</td><td>Flutter is a structural-dynamics problem, not a Re problem. Directly applicable to tilt pylons.</td></tr>
+      <tr><td>Abdomen as boom</td><td class="v-keep">KEEP</td><td>Moment arm, routing and radiator functions all scale favourably.</td></tr>
+      <tr><td>Abdominal mass-shift control</td><td class="v-drop">REJECT</td><td>Bandwidth far too low for a 2.3 t vehicle; adds a moving mass to primary structure.</td></tr>
+      <tr><td>Ocelli / compound eye pair</td><td class="v-keep">KEEP</td><td>Dissimilar redundancy is exactly what a 10⁻⁹ target demands. §07.</td></tr>
+      <tr><td>Interception guidance</td><td class="v-keep">KEEP</td><td>Pure control law. Scale-free.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section>
+  <span class="rail-n">04 / CONCEPT SPACE</span>
+  <h2>Four configurations, one survivor</h2>
+  <p>With flapping eliminated, the remaining question is how to arrange four force-producing stations. Candidates were scored against the requirement set, weighted by which requirements are hard constraints.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 04.1 — Configuration down-select</caption>
+    <thead><tr><th>Config</th><th>Hover eff.</th><th>Cruise L/D</th><th>Noise</th><th>OEI</th><th>Complexity</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>A. Multirotor, 8 fixed rotors, no wing</td><td>Poor</td><td>n/a</td><td>Poor</td><td>Good</td><td>Low</td><td class="v-drop">Range fails by 3×</td></tr>
+      <tr><td>B. Lift + cruise (separate lift rotors + pusher)</td><td>Fair</td><td>Fair</td><td>Fair</td><td>Good</td><td>Medium</td><td class="v-drop">Dead mass in cruise; loses the four-station symmetry</td></tr>
+      <tr><td>C. Tandem tilt-proprotor, 4 single rotors</td><td>Good</td><td>Good</td><td>Good</td><td class="v-drop">Fails</td><td>High</td><td class="v-drop">One-rotor-out = 25% thrust loss + huge moment</td></tr>
+      <tr><td>D. Tandem tilt-proprotor, 4 stations × coaxial pair</td><td>Good</td><td>Good</td><td>Fair</td><td class="v-keep">Good</td><td>High</td><td class="v-keep">SELECTED</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <span class="tag">The decision that shaped the aircraft</span>
+    <p>Config C is the most literal dragonfly translation — four stations, four rotors, tandem. It was rejected on a single number: losing one of four rotors costs 25% of thrust <em>and</em> generates an unrecoverable rolling and pitching moment at low airspeed. Sizing for that case demands roughly 1.6× thrust margin across the whole system.</p>
+    <p>Config D keeps the four-station topology — the part that came from the dragonfly — and puts a contra-rotating coaxial pair at each station. One motor out now costs 12.5% at one station, with near-zero net moment change. The penalty is coaxial interference (~14% on induced power) and a new acoustic interaction tone. <strong>Both penalties are then attacked using dragonfly phase control</strong> — see §08.</p>
+  </div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section>
+  <span class="rail-n">05 / THE CONCEPT</span>
+  <h2>ANAX-4</h2>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-n">2,300<span>kg</span></span><span class="stat-l">MTOW</span></div>
+    <div class="stat"><span class="stat-n">4.2<span>m</span></span><span class="stat-l">Rotor diameter</span></div>
+    <div class="stat"><span class="stat-n">407<span>N/m²</span></span><span class="stat-l">Disk loading</span></div>
+    <div class="stat"><span class="stat-n">8</span><span class="stat-l">Motors / 4 stations</span></div>
+    <div class="stat"><span class="stat-n">470<span>kW</span></span><span class="stat-l">Hover, SL ISA</span></div>
+    <div class="stat"><span class="stat-n">165<span>kWh</span></span><span class="stat-l">Installed energy</span></div>
+    <div class="stat"><span class="stat-n">90<span>km</span></span><span class="stat-l">Range, 4 pax</span></div>
+    <div class="stat"><span class="stat-n">55<span>Hz</span></span><span class="stat-l">Blade passage freq.</span></div>
+  </div>
+
+  <div class="diagram">
+  <svg viewBox="0 0 720 300" role="img" aria-label="Plan and side view of ANAX-4 showing the tandem four-station layout with vertical stagger between forward and aft rotors.">
+    <defs><style>
+      .a{fill:none;stroke:#141F1D;stroke-width:1.5;stroke-linejoin:round}
+      .af{fill:rgba(20,31,29,.07);stroke:#141F1D;stroke-width:1.5}
+      .d2{fill:rgba(15,101,96,.11);stroke:#0F6560;stroke-width:1;stroke-dasharray:3 3}
+      .dim{stroke:#7A4A22;stroke-width:.9;fill:none}
+      .t{font-family:"IBM Plex Mono",monospace;font-size:9.5px;fill:#6D7B74}
+      .th{font-family:"Bricolage Grotesque",sans-serif;font-size:11px;font-weight:700;fill:#141F1D;letter-spacing:.08em}
+      .ts{font-family:"IBM Plex Mono",monospace;font-size:9px;fill:#7A4A22}
+    </style></defs>
+
+    <!-- ============ PLAN VIEW ============ -->
+    <text x="6" y="14" class="th">PLAN</text>
+    <g transform="translate(0,22)">
+      <path class="af" d="M104 158 L 296 158 L 293 176 L 107 176 Z"/>
+      <path class="af" d="M134 78 L 266 78 L 264 92 L 136 92 Z"/>
+      <path class="af" d="M192 26 C 183 44, 181 82, 183 118 L 183 162 L 196 162 L 196 236 L 204 236 L 204 162 L 217 162 L 217 118 C 219 82, 217 44, 208 26 C 203 18, 197 18, 192 26 Z"/>
+      <path class="a" d="M200 236 L 170 266 M 200 236 L 230 266"/>
+      <circle class="d2" cx="124" cy="85" r="30"/><circle class="d2" cx="276" cy="85" r="30"/>
+      <circle class="d2" cx="104" cy="167" r="30"/><circle class="d2" cx="296" cy="167" r="30"/>
+      <g fill="#141F1D">
+        <rect x="118" y="76" width="11" height="18" rx="3"/><rect x="271" y="76" width="11" height="18" rx="3"/>
+        <rect x="98" y="158" width="11" height="18" rx="3"/><rect x="291" y="158" width="11" height="18" rx="3"/>
+      </g>
+      <g fill="#7A4A22"><rect x="120" y="69" width="7" height="4.5"/><rect x="273" y="69" width="7" height="4.5"/>
+      <rect x="100" y="151" width="7" height="4.5"/><rect x="293" y="151" width="7" height="4.5"/></g>
+      <!-- dims -->
+      <path class="dim" d="M74 258 L 326 258 M 74 252 L 74 264 M 326 252 L 326 264"/>
+      <text x="164" y="272" class="ts">10.6 m span</text>
+      <path class="dim" d="M344 26 L 344 266 M 338 26 L 350 26 M 338 266 L 350 266"/>
+      <text x="352" y="150" class="ts">11.2 m</text>
+      <text x="12" y="120" class="t">aft station:</text>
+      <text x="12" y="132" class="t">+0.9 m outboard</text>
+      <text x="234" y="46" class="t">canard station</text>
+    </g>
+
+    <!-- ============ SIDE VIEW ============ -->
+    <text x="420" y="14" class="th">SIDE — hover, stagger detail</text>
+    <g transform="translate(400,60)">
+      <!-- fuselage profile -->
+      <path class="af" d="M28 96 C 34 74, 56 62, 92 60 L 150 60 C 176 62, 188 72, 192 88 L 196 104 L 268 108 L 268 116 L 40 118 C 28 116, 22 106, 28 96 Z"/>
+      <path class="a" d="M268 112 L 288 92 M 268 112 L 288 132"/>
+      <!-- forward rotor plane (lower) -->
+      <path class="a" d="M64 68 L 64 44" stroke-width="2"/>
+      <path class="a" d="M22 44 L 106 44" stroke-width="2.4"/>
+      <text x="16" y="36" class="t">fwd rotor plane</text>
+      <!-- aft rotor plane (raised) -->
+      <path class="a" d="M188 84 L 188 24" stroke-width="2"/>
+      <path class="a" d="M146 24 L 230 24" stroke-width="2.4"/>
+      <text x="152" y="16" class="t">aft rotor plane</text>
+      <!-- stagger dim -->
+      <path class="dim" d="M120 44 L 120 24 M 114 44 L 126 44 M 114 24 L 126 24"/>
+      <text x="128" y="38" class="ts">Δz = 1.1 m</text>
+      <!-- downwash arrows -->
+      <g stroke="#0F6560" stroke-width="1" opacity=".55">
+        <path d="M40 50 L 40 150 M 64 50 L 64 158 M 88 50 L 88 150"/>
+        <path d="M164 30 L 164 150 M 188 30 L 188 158 M 212 30 L 212 150"/>
+      </g>
+      <path d="M36 146 L 40 156 L 44 146" fill="none" stroke="#0F6560" stroke-width="1"/>
+      <path d="M184 146 L 188 156 L 192 146" fill="none" stroke="#0F6560" stroke-width="1"/>
+      <text x="6" y="176" class="t">Aft rotors raised 1.1 m and offset 0.9 m outboard: the aft disc</text>
+      <text x="6" y="188" class="t">sits clear of the forward contracted wake — the hindwing trick,</text>
+      <text x="6" y="200" class="t">used here to avoid ingestion rather than to exploit it.</text>
+      <!-- gear -->
+      <path class="a" d="M70 118 L 70 134 M 210 118 L 210 134" stroke-width="2"/>
+      <circle cx="70" cy="139" r="5" class="af"/><circle cx="210" cy="139" r="5" class="af"/>
+    </g>
+  </svg>
+  </div>
+
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 05.1 — Configuration summary</caption>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Layout</td><td>Canard + main wing, four tilting lift stations, contra-rotating coaxial pair per station</td></tr>
+      <tr><td>Span / length / height</td><td>10.6 m / 11.2 m / 3.4 m</td></tr>
+      <tr><td>Lifting area</td><td>15.4 m² (main 11.0, canard 4.4)</td></tr>
+      <tr><td>Wing loading</td><td>149 kg/m²</td></tr>
+      <tr><td>Rotors</td><td>8 × 4.2 m dia., 5 blades each, variable pitch</td></tr>
+      <tr><td>Hover tip speed</td><td>145 m/s (659 rpm) — deliberately low</td></tr>
+      <tr><td>Cruise mode</td><td>Lower rotor of each pair feathers and stops; four upper rotors drive at reduced rpm</td></tr>
+      <tr><td>Effectors</td><td>8 rotor speeds + 8 collective pitches + 4 tilt angles + 6 surfaces = 26 for 6 DOF</td></tr>
+      <tr><td>Energy</td><td>165 kWh installed, 265 Wh/kg pack level, distributed in 12 isolated modules along the boom</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ================= 06 ================= -->
+<section>
+  <span class="rail-n">06 / SIZING</span>
+  <h2>The numbers, and the one that hurts</h2>
+
+  <h3>Hover power</h3>
+  <div class="calc">
+<span class="c"># Momentum theory, per station</span>
+W        = 2300 × 9.81 = 22,563 N
+T/station= 22,563 / 4   = 5,641 N
+A_disc   = π × 2.1²     = 13.85 m²
+DL       = 22,563 / (4 × 13.85) = <span class="r">407 N/m²</span>  <span class="c">(cf. helicopter 300–500, quad-eVTOL 700–1200)</span>
+
+P_ideal  = T^1.5 / √(2ρA)
+         = 423,600 / √(2 × 1.225 × 13.85)
+         = 423,600 / 5.83 = 72.7 kW per station
+         × 4 stations      = <span class="r">291 kW ideal</span>
+
+<span class="c"># Figure of merit 0.68 — includes profile power AND the coaxial</span>
+<span class="c"># interference penalty (~14% on induced power)</span>
+P_shaft  = 291 / 0.68 = 428 kW
+P_elec   = 428 / 0.91 = <span class="r">470 kW</span>  <span class="c">at sea level ISA</span>
+Hot/high (1500 m, ISA+15): × 1.20 = <span class="r">564 kW</span> required
+Installed: 8 × 75 kW cont. = 600 kW  (110 kW peak each for OEI)</div>
+
+  <h3>Cruise power</h3>
+  <div class="calc">
+q      = ½ρV² = 0.5 × 1.225 × 67² = 2,750 Pa
+C_L    = 22,563 / (15.4 × 2,750) = <span class="r">0.53</span>   <span class="c">— comfortable, good transition margin</span>
+L/D    = 14   <span class="c">(nacelle + stopped-rotor drag assumed, not wished away)</span>
+D      = 22,563 / 14 = 1,612 N
+P_prop = 1,612 × 67 = 108 kW
+P_elec = 108 / (0.84 × 0.91) = <span class="r">141 kW</span>   <span class="c">— 30% of hover power</span></div>
+
+  <h3>Energy budget — where the design binds</h3>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 06.1 — Mission energy, 4 pax</caption>
+    <thead><tr><th>Segment</th><th>Duration</th><th>Power</th><th>Energy</th></tr></thead>
+    <tbody>
+      <tr><td>Hover out + lift-off</td><td>60 s</td><td>470 kW</td><td>7.8 kWh</td></tr>
+      <tr><td>Transition + climb to 450 m</td><td>90 s</td><td>320 kW avg</td><td>8.0 kWh</td></tr>
+      <tr><td>Cruise, 90 km</td><td>22.5 min</td><td>141 kW</td><td>52.9 kWh</td></tr>
+      <tr><td>Descent + transition + hover in</td><td>90 s</td><td>300 kW avg</td><td>7.5 kWh</td></tr>
+      <tr><td><strong>Mission subtotal</strong></td><td>~27 min</td><td>—</td><td><strong>76.2 kWh</strong></td></tr>
+      <tr><td>Reserve: 45 km divert + 60 s hover</td><td>~12 min</td><td>—</td><td>34.0 kWh</td></tr>
+      <tr><td><strong>Total required</strong></td><td>—</td><td>—</td><td><strong>110.2 kWh</strong></td></tr>
+      <tr><td>Usable fraction (SOC window 0.85 × EOL derate 0.80)</td><td>—</td><td>—</td><td>0.68</td></tr>
+      <tr><td><strong>Installed</strong></td><td>—</td><td>—</td><td><strong>162 → 165 kWh</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Mass breakdown</h3>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 06.2 — Mass statement</caption>
+    <thead><tr><th>Group</th><th>Mass</th><th>% MTOW</th></tr></thead>
+    <tbody>
+      <tr><td>Structure (wings, canard, boom, fuselage, gear)</td><td>520 kg</td><td>22.6%</td></tr>
+      <tr><td>Propulsion (8 motors, inverters, rotors, tilt actuators, nacelles)</td><td>340 kg</td><td>14.8%</td></tr>
+      <tr><td>Energy (620 kg pack + 45 kg thermal)</td><td>665 kg</td><td>28.9%</td></tr>
+      <tr><td>Avionics, sensors, flight controls</td><td>95 kg</td><td>4.1%</td></tr>
+      <tr><td>Interior, seats, furnishings, systems</td><td>130 kg</td><td>5.7%</td></tr>
+      <tr><td><strong>Operating empty</strong></td><td><strong>1,750 kg</strong></td><td><strong>76.1%</strong></td></tr>
+      <tr><td>Payload (4 pax + bags)</td><td>400 kg</td><td>17.4%</td></tr>
+      <tr><td>Design margin</td><td>150 kg</td><td>6.5%</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <span class="tag">Binding constraint</span>
+    <p>The battery is 29% of MTOW and the empty-weight fraction is 76%. <strong>Range is not limited by aerodynamics, propulsion or architecture — it is limited entirely by pack-level specific energy.</strong> At 265 Wh/kg the aircraft closes at 90 km. At 220 Wh/kg it closes at roughly 55 km and the business case fails. At 350 Wh/kg it reaches ~150 km.</p>
+    <p>This is why the range requirement in §00 was written at 90 km rather than the 160 km the market would prefer. Writing an aspirational range requirement and then assuming a battery that does not exist is the most common failure mode in this vehicle class. The honest concept is range-limited and says so.</p>
+  </div>
+</section>
+
+<!-- ================= 07 ================= -->
+<section>
+  <span class="rail-n">07 / SUBSYSTEMS</span>
+  <h2>Where the dragonfly actually shows up</h2>
+
+  <h3>Structure — corrugation, used correctly</h3>
+  <p>The dragonfly wing's pleats are a stiffness solution first and an aerodynamic accident second. ANAX-4 uses <strong>sinusoidal corrugated CFRP shear webs</strong> in the wing box, canard box and rotor blade spars. Corrugated webs resist shear buckling far better than flat webs of the same mass, which lets the web gauge drop and removes most of the stiffener population. Estimated saving in the wing box: 11–14% versus a conventional flat-web, stiffened design.</p>
+  <p>What is <em>not</em> copied: the external aerodynamic corrugation. At Re ≈ 5 × 10⁶ a pleated outer surface is simply a drag penalty. The pleats live inside the structure where they belong.</p>
+
+  <h3>Aeroelasticity — the pterostigma</h3>
+  <p>Whirl flutter is the classic tiltrotor failure mode: the nacelle mass on a flexible pylon couples with the rotor's gyroscopic and aerodynamic moments and goes unstable above a critical airspeed. The dragonfly solved the analogous wing-flutter problem by placing a small dense mass outboard and forward.</p>
+  <p>ANAX-4 places <strong>tuned masses at the outboard-forward corner of each tilt pylon</strong>, sized to move the pylon mass axis ahead of the elastic axis and push the whirl-flutter onset above 1.2 × V<sub>dive</sub>. Because the mass is discrete and outboard, it buys the margin at roughly a third of the mass cost of stiffening the pylon to the same margin.</p>
+
+  <h3>Energy and thermal — the abdomen</h3>
+  <p>The boom aft of the cabin carries no lift and no rotor loads. It carries: the 800 V DC bus, twelve isolated battery modules, and a corrugated upper skin acting as a passive radiator. Dragonflies dump thoracic heat down the abdomen; the boom does the same job with a 2.4 m² effective radiating surface that costs no additional drag because the skin is already there. Module isolation and directional overboard venting contain a thermal runaway to one module.</p>
+  <p>The boom also does the abdomen's other job: a 3.1 m tail moment arm, which shrinks the V-tail to 1.9 m² and saves roughly 18 kg against a short-coupled layout.</p>
+
+  <h3>Sensing — two eyes and three ocelli</h3>
+  <div class="cells">
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Compound-eye belt</h4>
+      <p class="bio">12 × event cameras</p>
+      <p>Near-omnidirectional coverage with microsecond-scale latency and &gt;120 dB dynamic range — no blooming flying into low sun, no motion blur. Feeds detect-and-avoid.</p>
+    </div>
+    <div class="cell"><span class="stigma half"></span>
+      <h4>Small-target motion detection</h4>
+      <p class="bio">STMD, dragonfly-derived</p>
+      <p>Algorithms modelled directly on Odonate target-selective neurons pull small, low-contrast intruders — birds, other UAS — out of moving clutter, which conventional detectors handle badly.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Ocelli triad</h4>
+      <p class="bio">3 × wide-FOV horizon sensors</p>
+      <p>Coarse, fast, absolute attitude from the sky–ground gradient. Independent of the IMU and of GNSS — a dissimilar third channel with a completely different failure signature. This is a certification argument, not just a control one.</p>
+    </div>
+    <div class="cell"><span class="stigma solid"></span>
+      <h4>Distributed mechanoreception</h4>
+      <p class="bio">FBG strain + MEMS pressure taps</p>
+      <p>Blades and wings instrumented for direct load sensing, feeding gust load alleviation and live stall-margin estimation rather than inferring both from the IMU.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 ================= -->
+<section>
+  <span class="rail-n">08 / CONTROL</span>
+  <h2>Phase, reinterpreted twice</h2>
+  <p class="lede">The dragonfly's single cleverest trick is that it controls the <em>relationship</em> between its front and rear force producers rather than just their magnitude. That idea survives translation, in two separate places.</p>
+
+  <h3>Use 1 — rotor clocking for acoustics</h3>
+  <p>The coaxial pairs chosen in §04 bring an interaction tone: the lower rotor slices the upper rotor's wake once per blade passage, producing a strong, highly tonal, very annoying signature. The mitigation is <strong>active azimuthal phase control</strong> between upper and lower rotors, and between the fore and aft stations.</p>
+  <p>Holding a commanded phase offset detunes the interaction so that the four stations' tones do not reinforce in the far field, and lets the phase schedule be varied with azimuth so that no observer on the ground sits in a persistent constructive-interference lobe. The dragonfly modulates fore–hind stroke phase to manage wake interaction; ANAX-4 modulates rotor index phase to manage wake interaction. Same variable, different mechanism.</p>
+
+  <h3>Use 2 — sequenced transition</h3>
+  <p>Dragonflies lead with the forewings. ANAX-4 leads with the canard station: the forward nacelles run roughly 8° ahead of the aft nacelles throughout the tilt schedule.</p>
+
+  <div class="diagram">
+  <svg viewBox="0 0 720 190" role="img" aria-label="Five-stage transition schedule showing forward nacelles leading aft nacelles through the tilt from hover to cruise.">
+    <defs><style>
+      .nb{fill:#141F1D}
+      .rot{stroke:#0F6560;stroke-width:1.6}
+      .fus{fill:rgba(20,31,29,.09);stroke:#141F1D;stroke-width:1.2}
+      .tt{font-family:"IBM Plex Mono",monospace;font-size:9px;fill:#6D7B74}
+      .tk{font-family:"Bricolage Grotesque",sans-serif;font-size:10.5px;font-weight:700;fill:#141F1D}
+      .ln{stroke:#B9C3BC;stroke-width:1}
+    </style></defs>
+    <path class="ln" d="M20 150 L 700 150"/>
+    <g>
+      <!-- stage template repeated with varying angles -->
+      <!-- s1 0 s -->
+      <g transform="translate(50,80)">
+        <ellipse class="fus" cx="0" cy="0" rx="30" ry="9"/>
+        <g transform="translate(-20,-4)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+        <g transform="translate(22,-4)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+      </g>
+      <text x="24" y="168" class="tt">t=0 s · 90°/90°</text>
+      <text x="30" y="118" class="tk">HOVER</text>
+
+      <!-- s2 -->
+      <g transform="translate(190,80)">
+        <ellipse class="fus" cx="0" cy="0" rx="30" ry="9"/>
+        <g transform="translate(-20,-4) rotate(-25)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+        <g transform="translate(22,-4) rotate(-17)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+      </g>
+      <text x="160" y="168" class="tt">t=9 s · 65°/73°</text>
+      <text x="150" y="118" class="tk">CANARD LEADS</text>
+
+      <!-- s3 -->
+      <g transform="translate(330,80)">
+        <ellipse class="fus" cx="0" cy="0" rx="30" ry="9"/>
+        <g transform="translate(-20,-4) rotate(-50)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+        <g transform="translate(22,-4) rotate(-42)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+      </g>
+      <text x="300" y="168" class="tt">t=18 s · 40°/48°</text>
+      <text x="292" y="118" class="tk">CORRIDOR</text>
+
+      <!-- s4 -->
+      <g transform="translate(470,80)">
+        <ellipse class="fus" cx="0" cy="0" rx="30" ry="9"/>
+        <g transform="translate(-20,-4) rotate(-72)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+        <g transform="translate(22,-4) rotate(-64)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+      </g>
+      <text x="440" y="168" class="tt">t=27 s · 18°/26°</text>
+      <text x="424" y="118" class="tk">WING-BORNE</text>
+
+      <!-- s5 -->
+      <g transform="translate(620,80)">
+        <ellipse class="fus" cx="0" cy="0" rx="30" ry="9"/>
+        <g transform="translate(-20,-4) rotate(-90)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+        <g transform="translate(22,-4) rotate(-90)"><rect class="nb" x="-4" y="-5" width="8" height="10" rx="2"/><path class="rot" d="M-16 -5 L 16 -5"/></g>
+      </g>
+      <text x="592" y="168" class="tt">t=35 s · 0°/0°</text>
+      <text x="600" y="118" class="tk">CRUISE</text>
+    </g>
+    <text x="20" y="24" class="tt">Forward (canard) nacelles lead the aft nacelles by ~8° throughout — the canard unloads first, so the</text>
+    <text x="20" y="36" class="tt">main wing can never reach stall before the canard does. Deep-stall entry is made geometrically unavailable.</text>
+  </svg>
+  </div>
+
+  <h3>Three-tier architecture</h3>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 08.1 — Control hierarchy, mirroring the Odonate neural stack</caption>
+    <thead><tr><th>Tier</th><th>Rate</th><th>Function</th><th>Biological parallel</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Reflex</td><td>≤ 3 ms, local</td><td>Motor current loops, blade pitch, gust load alleviation. Runs on the station node; survives loss of the central computer.</td><td>Wing-base mechanoreceptor reflex arcs</td></tr>
+      <tr><td>2 · Stabilisation</td><td>200 Hz</td><td>Attitude and velocity control; allocates 26 effectors onto 6 DOF; reconfigures allocation within 100 ms of a fault.</td><td>Thoracic motor pattern generation</td></tr>
+      <tr><td>3 · Guidance</td><td>10 Hz</td><td>Trajectory, DAA manoeuvring, proportional-navigation terminal approach to the pad.</td><td>Target-selective descending neurons</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Over-actuation is the point, not a byproduct. With 26 effectors serving 6 degrees of freedom, the allocator has room to trade: it can hold attitude while re-optimising for minimum noise on approach, minimum energy in cruise, or maximum control margin after a fault — without changing the control law. That flexibility is precisely what four independently driven wings buy the dragonfly.</p>
+</section>
+
+<!-- ================= 09 ================= -->
+<section>
+  <span class="rail-n">09 / FAILURE MODES</span>
+  <h2>What breaks, and what happens next</h2>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 09.1 — Principal hazards</caption>
+    <thead><tr><th>Hazard</th><th>Consequence</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Single motor / inverter loss</td><td>12.5% thrust loss at one station; small yaw and roll transient</td><td>Seven remaining motors at 110 kW peak cover hover. Allocator reconfigures in &lt;100 ms. Continued flight to a planned pad.</td></tr>
+      <tr><td>Whole station loss (tilt actuator jam at 90°)</td><td>Asymmetric configuration; cannot complete transition</td><td>Dual redundant actuator per station with independent load paths; jam-tolerant screw. Fallback: land vertically in the current configuration.</td></tr>
+      <tr><td>Whirl flutter</td><td>Catastrophic, rapid onset</td><td>Pterostigma tuned masses + pylon stiffness sizing to 1.2 × V<sub>dive</sub>; flight-test envelope expansion with real-time damping tracking.</td></tr>
+      <tr><td>Vortex ring state</td><td>Loss of thrust in descent; asymmetric entry is the real danger in a tandem layout</td><td>Vertical stagger (Δz = 1.1 m) and outboard offset keep the aft discs out of the forward wake in descent. Flight-envelope limiting on rate of descent vs. airspeed.</td></tr>
+      <tr><td>Battery thermal runaway</td><td>Fire, structural heating of the boom</td><td>12 isolated modules, inter-module firewalls, directional overboard venting, boom structure sized for the post-event thermal case.</td></tr>
+      <tr><td>Total electrical bus loss</td><td>Loss of all thrust</td><td>Two independent buses, four motors each, split fore/aft <em>and</em> left/right so no single bus loss produces a pure moment.</td></tr>
+      <tr><td>Attitude reference loss</td><td>Loss of control in IMC</td><td>Ocelli triad provides an attitude source that is dissimilar in physics, not just duplicated in hardware — the common-mode argument SC-VTOL will ask for.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section>
+  <span class="rail-n">10 / ACOUSTICS</span>
+  <h2>The requirement that decides whether it ever flies commercially</h2>
+  <p>Community noise is not a comfort item for this vehicle class — it is the gate on route approval. Four choices in this design exist primarily for acoustics, and each costs something real.</p>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 10.1 — Acoustic choices and their costs</caption>
+    <thead><tr><th>Choice</th><th>Acoustic benefit</th><th>Cost paid</th></tr></thead>
+    <tbody>
+      <tr><td>Low disk loading, 407 N/m²</td><td>Lower downwash velocity; thickness and loading noise both fall steeply with tip speed and induced velocity</td><td>4.2 m rotors → large vehicle footprint → larger vertiport pads</td></tr>
+      <tr><td>Tip speed 145 m/s (vs. ~210 typical)</td><td>Loading noise scales near the 5th–6th power of tip speed. This is the single biggest lever available.</td><td>Higher torque → heavier motors and gearboxes, ~40 kg penalty</td></tr>
+      <tr><td>5 blades per rotor</td><td>Pushes BPF to 55 Hz and reduces per-blade loading</td><td>Blade count costs mass and hub complexity</td></tr>
+      <tr><td>Active rotor clocking (§08)</td><td>Detunes coaxial interaction tone; prevents far-field reinforcement between stations</td><td>Requires precise phase-locked motor control across 8 rotors; a genuine controls development risk</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note">
+    <span class="tag">Open question</span>
+    <p>Pushing energy down to 55 Hz reduces A-weighted annoyance but low frequencies attenuate less with distance and penetrate building structure better. Whether the 62 dBA @ 100 m target is the right metric at all — versus a loudness or tonality-corrected metric — is unresolved in the industry and should be settled before the blade count is frozen.</p>
+  </div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section>
+  <span class="rail-n">11 / CERTIFICATION</span>
+  <h2>The regulatory path now exists — which changes the design</h2>
+  <p>When eVTOL concepts were first drawn there was no rulebook, and designers could defer the question. That is no longer true, and the framework now constrains real design choices.</p>
+  <ul>
+    <li><strong>Airworthiness:</strong> FAA powered-lift special class under 14 CFR 21.17(b), with the certification basis established through issue papers and guided by AC 21.17-4. EASA route is SC-VTOL, <em>Enhanced</em> category — required for flight over congested areas, and the source of the 10⁻⁹ target.</li>
+    <li><strong>Pilot qualification:</strong> SFAR No. 120 established the powered-lift rating in October 2024.</li>
+    <li><strong>Operations:</strong> Part 194, the dedicated powered-lift operating rule, was finalised in March 2026, completing the US regulatory stack alongside Part 135 air carrier requirements.</li>
+    <li><strong>Precedent:</strong> Joby received the first US eVTOL type certificate in June 2026, following CAAC certification of EHang's EH216-S and AutoFlight's CarryAll. A certification basis for this class is no longer hypothetical.</li>
+  </ul>
+  <p>The design consequence is concrete: the SC-VTOL Enhanced 10⁻⁹ requirement is what killed the four-single-rotor configuration in §04 and produced the eight-motor architecture. It also drives the dissimilar attitude reference in §07 and the dual-bus split in §09. <strong>Three of this aircraft's defining features are regulatory in origin, not aerodynamic.</strong></p>
+</section>
+
+<!-- ================= 12 ================= -->
+<section>
+  <span class="rail-n">12 / RISK</span>
+  <h2>What is not yet known</h2>
+  <div class="tbl-scroll">
+  <table>
+    <caption>Table 12.1 — Open risks, ranked</caption>
+    <thead><tr><th>#</th><th>Risk</th><th>Retires by</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Pack specific energy fails to reach 265 Wh/kg at certifiable safety and cycle life</td><td>Cell selection and pack-level testing before configuration freeze. Fallback: reduce to 2 pax + 130 km.</td></tr>
+      <tr><td>2</td><td>Coaxial interaction noise cannot be suppressed by clocking to the required degree</td><td>Isolated coaxial pair on an outdoor acoustic rig, full-scale, with phase sweep. Do this <em>before</em> anything else.</td></tr>
+      <tr><td>3</td><td>Whirl-flutter margin unachievable without unacceptable pylon mass</td><td>Aeroelastic model correlated against a 1/5-scale powered wind-tunnel model.</td></tr>
+      <tr><td>4</td><td>Tandem VRS behaviour in asymmetric descent is worse than predicted</td><td>Free-flight subscale descent testing across the full rate-of-descent / airspeed envelope.</td></tr>
+      <tr><td>5</td><td>26-effector allocator cannot be shown deterministic enough for certification credit</td><td>Early engagement on the certification basis for the control allocation function; consider a certified fallback law with a reduced effector set.</td></tr>
+      <tr><td>6</td><td>Corrugated-web spar manufacturing cost exceeds the mass saving's value</td><td>Manufacturing trial coupons and a full-scale spar section.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Suggested test sequence</h3>
+  <ol>
+    <li><strong>Acoustic rig, full-scale coaxial pair</strong> — because if this fails, the configuration is wrong and everything downstream is wasted.</li>
+    <li>1/5-scale aeroelastic wind-tunnel model — whirl flutter and transition corridor.</li>
+    <li>1/3-scale free-flight demonstrator — transition schedule, VRS envelope, allocator behaviour under induced faults.</li>
+    <li>Iron bird — full electrical architecture, bus split, thermal runaway containment.</li>
+    <li>Full-scale tethered hover, then envelope expansion.</li>
+  </ol>
+</section>
+
+<!-- ================= 13 ================= -->
+<section>
+  <span class="rail-n">13 / DISCIPLINE</span>
+  <h2>What was deliberately not copied</h2>
+  <p class="lede">A biomimetic design is judged as much by its rejections as its adoptions. Each of these was studied and abandoned for a stated reason.</p>
+  <div class="cells">
+    <div class="cell"><span class="stigma"></span>
+      <h4>Flapping wings</h4>
+      <p>Rejected on Reynolds number, wing inertia, and fatigue certification — three independent arguments, §03. This is the whole reason the aircraft looks nothing like a dragonfly.</p>
+    </div>
+    <div class="cell"><span class="stigma"></span>
+      <h4>Aerodynamic corrugation</h4>
+      <p>Only advantageous below Re ≈ 10⁴. The pleats were moved inside the structure, where the stiffness argument still holds at any scale.</p>
+    </div>
+    <div class="cell"><span class="stigma"></span>
+      <h4>Abdominal mass-shift control</h4>
+      <p>Bandwidth orders of magnitude too low, control authority poor, and it puts a moving mass into primary structure. A textbook case of a mechanism that only works because the animal is light.</p>
+    </div>
+    <div class="cell"><span class="stigma"></span>
+      <h4>Membranous, unactuated wing surface</h4>
+      <p>Depends on scale-dependent surface tension, cuticle properties and self-repair mechanisms with no engineering equivalent at 2.3 t. Certifiable primary structure is not negotiable.</p>
+    </div>
+    <div class="cell"><span class="stigma"></span>
+      <h4>Four-wing kinematic mimicry</h4>
+      <p>The topology was kept; the kinematics were not. Copying the arrangement of force producers is engineering. Copying how they move is costume.</p>
+    </div>
+    <div class="cell"><span class="stigma"></span>
+      <h4>Dragonfly-shaped fuselage</h4>
+      <p>A slender segmented body is optimal for an animal that must also perch, mate and moult. A cabin for four people has different requirements. Aesthetic mimicry was excluded from the outset.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="tag">The method, in one line</span>
+    <p>Nothing was adopted because it came from a dragonfly. Each item was adopted because a physical argument survived a change of five orders of magnitude in mass — and the dragonfly was the source of the hypothesis, not the justification.</p>
+  </div>
+</section>
+
+<footer>
+  <p><b>ANAX-4 · Concept Design Dossier · Rev A</b><br>
+  Method: functional biomimicry with an explicit scaling filter. All performance figures are first-order sizing estimates from momentum theory and standard mass fractions — appropriate for concept trade studies, not for detailed design or investment decisions. Empty-weight fraction, figure of merit, and pack specific energy are the three assumptions most likely to be wrong, and each is called out where used.</p>
+  <p>Regulatory status current as of July 2026 and moving quickly; verify before citing.</p>
+</footer>
+
+</div>
+</body>
+</html>
