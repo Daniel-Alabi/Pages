@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fourier series &rarr; Fourier transform &mdash; a working tutor</title>
+<style>
+:root{
+  --paper:#EDEFEB; --panel:#F7F8F5; --ink:#13181C; --ink2:#5C666E; --ink3:#8A939A;
+  --rule:#D5DAD3; --rule2:#BFC5BD;
+  --indigo:#2A3C9E; --indigo-soft:rgba(42,60,158,.16);
+  --rust:#B04420; --rust-soft:rgba(176,68,32,.14);
+  --teal:#0F6E56;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0F1214; --panel:#171B1E; --ink:#E7EAE5; --ink2:#98A2A6; --ink3:#6E777C;
+    --rule:#252A2D; --rule2:#343A3E;
+    --indigo:#7C8DE8; --indigo-soft:rgba(124,141,232,.20);
+    --rust:#DE7F55; --rust-soft:rgba(222,127,85,.18);
+    --teal:#5DCAA5;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px 80px}
+
+/* ---------- masthead ---------- */
+.mast{padding:44px 0 22px;border-bottom:1px solid var(--rule)}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink3); margin:0 0 14px;
+}
+.mast h1{
+  font-family:var(--mono); font-weight:500; font-size:clamp(20px,3.1vw,30px);
+  letter-spacing:.02em; line-height:1.3; margin:0 0 10px; max-width:20ch;
+}
+.mast h1 em{font-style:normal;color:var(--rust)}
+.mast p{margin:0;max-width:56ch;color:var(--ink2);font-size:15px}
+.hero{
+  margin-top:26px;height:96px;position:relative;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.hero canvas{display:block;width:100%;height:100%}
+.hero .cap{
+  position:absolute;right:0;bottom:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.1em;color:var(--ink3);text-transform:uppercase;
+}
+
+/* ---------- nav ---------- */
+nav{display:flex;flex-wrap:wrap;gap:0;margin:0;border-bottom:1px solid var(--rule)}
+nav button{
+  appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink2);padding:14px 16px 12px;cursor:pointer;margin-bottom:-1px;
+}
+nav button:hover{color:var(--ink)}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--rust)}
+nav button .num{color:var(--ink3);margin-right:7px}
+nav button[aria-selected="true"] .num{color:var(--rust)}
+
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:216px minmax(0,1fr);gap:36px;padding-top:30px}
+@media (max-width:860px){.cols{grid-template-columns:1fr;gap:20px}}
+.gutter{position:sticky;top:22px;align-self:start}
+@media (max-width:860px){.gutter{position:static}}
+.gutter .lab{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:10px
+}
+.eq{
+  font-family:var(--mono);font-size:13px;line-height:2;color:var(--ink);
+  border-left:2px solid var(--rust);padding:2px 0 2px 14px;margin:0 0 16px;
+}
+.eq small{display:block;font-size:11.5px;color:var(--ink2);letter-spacing:.02em;line-height:1.6;margin-top:6px;font-family:var(--sans)}
+.gutter .note{font-size:13px;color:var(--ink2);line-height:1.6}
+
+section[hidden]{display:none}
+h2{font-family:var(--mono);font-weight:500;font-size:16px;letter-spacing:.03em;margin:0 0 6px}
+.sub{color:var(--ink2);font-size:14.5px;margin:0 0 22px;max-width:62ch}
+.prose{max-width:64ch;color:var(--ink2);font-size:14.5px}
+.prose strong{color:var(--ink);font-weight:500}
+.prose code{font-family:var(--mono);font-size:13px;color:var(--ink)}
+
+/* ---------- controls ---------- */
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px 22px;margin-bottom:18px}
+label.f{display:block}
+label.f .t{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink3);display:flex;justify-content:space-between;margin-bottom:6px
+}
+label.f .v{color:var(--ink);letter-spacing:.04em}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:18px;background:none;cursor:pointer;margin:0
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--rule2)}
+input[type=range]::-moz-range-track{height:2px;background:var(--rule2)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;background:var(--rust);border:0;border-radius:50%;margin-top:-5.5px
+}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--rust);border:0;border-radius:50%}
+select{
+  width:100%;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  background:var(--panel);border:1px solid var(--rule2);border-radius:0;padding:7px 9px
+}
+button.act{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  background:none;color:var(--ink);border:1px solid var(--rule2);border-radius:0;
+  padding:9px 14px;cursor:pointer
+}
+button.act:hover{border-color:var(--ink2)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:20px}
+.toggles label{
+  display:flex;align-items:center;gap:7px;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)
+}
+.toggles input{accent-color:var(--rust);width:14px;height:14px}
+:focus-visible{outline:2px solid var(--rust);outline-offset:2px}
+
+/* ---------- plots ---------- */
+.plot{background:var(--panel);border:1px solid var(--rule);margin-bottom:6px;position:relative}
+.plot canvas{display:block;width:100%}
+.plab{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3);margin:16px 0 7px;display:flex;justify-content:space-between;align-items:baseline;gap:12px
+}
+.key{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink2);text-transform:none}
+.key i{display:inline-block;width:14px;height:0;border-top-width:2px;border-top-style:solid;vertical-align:middle;margin-right:5px}
+
+/* ---------- metrics ---------- */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin:20px 0 6px}
+.metrics div{background:var(--panel);padding:12px 14px}
+.metrics .k{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3)}
+.metrics .n{font-family:var(--mono);font-size:20px;letter-spacing:.01em;margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* ---------- 2x2 grid (panel 3) ---------- */
+.quad{display:grid;grid-template-columns:20px 1fr 1fr;gap:12px;margin:8px 0 4px}
+@media (max-width:640px){.quad{grid-template-columns:1fr}.quad .vlab,.quad .hlab{display:none}}
+.hlab,.vlab{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;justify-content:center}
+.vlab span{writing-mode:vertical-rl;transform:rotate(180deg)}
+.cell{background:var(--panel);border:1px solid var(--rule);padding:15px 16px}
+.cell.mark{border-color:var(--rust)}
+.cell h3{font-family:var(--mono);font-weight:500;font-size:14px;margin:0 0 2px;letter-spacing:.02em}
+.cell .sym{font-family:var(--mono);font-size:12px;color:var(--ink2);margin-bottom:11px}
+.cell .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.07em;padding:3px 7px;border:1px solid var(--rule2);color:var(--ink2)}
+.cell .tag.hot{border-color:var(--rust);color:var(--rust)}
+.rule-note{border-left:2px solid var(--rust);padding:6px 0 6px 14px;margin:22px 0 0;font-size:14.5px;color:var(--ink2);max-width:60ch}
+footer{margin-top:54px;padding-top:18px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Signals &amp; systems &middot; interactive notes</p>
+  <h1>One transform, <em>four</em> spellings</h1>
+  <p>The Fourier series and the Fourier transform are not two methods. They are the same projection, read at two limits of the same period. These panels let you push the period yourself and watch one become the other.</p>
+  <div class="hero"><canvas id="heroCv"></canvas><span class="cap">square wave &middot; partial sums n = 1 &hellip; 41</span></div>
+</header>
+
+<nav role="tablist">
+  <button role="tab" data-p="p1" aria-selected="true"><span class="num">01</span>Series analyzer</button>
+  <button role="tab" data-p="p2" aria-selected="false"><span class="num">02</span>Series &rarr; transform</button>
+  <button role="tab" data-p="p3" aria-selected="false"><span class="num">03</span>The four cases</button>
+  <button role="tab" data-p="p4" aria-selected="false"><span class="num">04</span>Sampling &amp; aliasing</button>
+  <button role="tab" data-p="p5" aria-selected="false"><span class="num">05</span>Leakage &amp; windows</button>
+</nav>
+
+<div class="cols">
+  <aside class="gutter">
+    <p class="lab">Governing relation</p>
+    <div id="gutEq"></div>
+    <p class="note" id="gutNote"></p>
+  </aside>
+
+  <main>
+
+  <!-- ================= PANEL 1 ================= -->
+  <section id="p1">
+    <h2>Analyze a periodic signal</h2>
+    <p class="sub">Coefficients are computed by numerical projection onto each basis function &mdash; no closed forms are hardcoded, so what you see is the analysis equation actually running.</p>
+
+    <div class="ctrls">
+      <label class="f"><span class="t">Waveform</span>
+        <select id="a-wf">
+          <option value="square">Square</option>
+          <option value="saw">Sawtooth</option>
+          <option value="tri">Triangle</option>
+          <option value="pulse">Pulse train</option>
+          <option value="halfrect">Half-wave rectified sine</option>
+          <option value="fullrect">Full-wave rectified sine</option>
+          <option value="expdecay">Exponential ramp</option>
+        </select>
+      </label>
+      <label class="f"><span class="t">Harmonics N <span class="v" id="a-nOut">7</span></span>
+        <input type="range" id="a-n" min="1" max="60" step="1" value="7" />
+      </label>
+      <label class="f"><span class="t">Duty cycle <span class="v" id="a-dOut">0.30</span></span>
+        <input type="range" id="a-d" min="0.05" max="0.95" step="0.01" value="0.3" />
+      </label>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="a-h" /> Individual harmonics</label>
+      <label><input type="checkbox" id="a-t" checked /> Target signal</label>
+      <label><input type="checkbox" id="a-db" /> Spectrum in dB</label>
+      <label><input type="checkbox" id="a-ph" checked /> Phase spectrum</label>
+    </div>
+
+    <div class="plab"><span>Time domain &mdash; two periods</span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>partial sum</span><span><i style="border-color:var(--ink3);border-top-style:dashed"></i>target</span></span>
+    </div>
+    <div class="plot"><canvas id="a-wave" height="250" role="img" aria-label="Target waveform and its truncated Fourier partial sum over two periods"></canvas></div>
+
+    <div class="metrics">
+      <div><div class="k">RMS error</div><div class="n" id="a-rms">&mdash;</div></div>
+      <div><div class="k">Gibbs overshoot</div><div class="n" id="a-gib">&mdash;</div></div>
+      <div><div class="k">THD</div><div class="n" id="a-thd">&mdash;</div></div>
+      <div><div class="k">AC power kept</div><div class="n" id="a-pow">&mdash;</div></div>
+    </div>
+
+    <div class="plab"><span>Magnitude spectrum |c<sub>n</sub>|</span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>in the sum</span><span><i style="border-color:var(--ink3)"></i>truncated away</span></span>
+    </div>
+    <div class="plot"><canvas id="a-mag" height="180" role="img" aria-label="Harmonic magnitude spectrum, with included harmonics distinguished from truncated ones"></canvas></div>
+
+    <div id="a-phWrap">
+      <div class="plab"><span>Phase spectrum &angle;c<sub>n</sub> &mdash; drawn only where magnitude is meaningful</span></div>
+      <div class="plot"><canvas id="a-phase" height="150" role="img" aria-label="Harmonic phase in degrees versus harmonic index"></canvas></div>
+    </div>
+
+    <p class="prose" style="margin-top:22px">Set the square wave and sweep <code>N</code>. RMS error falls steadily; the overshoot parks near <strong>9%</strong> and stays. The ringing narrows without shrinking &mdash; convergence in energy, failure at the jump. Triangle, being continuous, shows no such plateau.</p>
+    <p class="prose">Phase is where most intuition fails. On the pulse train, watch the phase flip by 180&deg; every time the magnitude envelope crosses zero: that sign change <em>is</em> the sinc going negative, and discarding it would misplace every pulse edge.</p>
+  </section>
+
+  <!-- ================= PANEL 2 ================= -->
+  <section id="p2" hidden>
+    <h2>Stretch the period until the series becomes the transform</h2>
+    <p class="sub">The line spectrum is the transform of one pulse, sampled every f<sub>0</sub> = 1/T<sub>0</sub>. Increase T<sub>0</sub> and the samples crowd together; the thing they are sampling never moves.</p>
+
+    <div class="ctrls">
+      <label class="f"><span class="t">Period T<sub>0</sub> <span class="v" id="s-t0Out">4.0</span></span>
+        <input type="range" id="s-t0" min="2" max="40" step="0.5" value="4" />
+      </label>
+      <label class="f"><span class="t">Pulse width &tau; <span class="v" id="s-tauOut">1.00</span></span>
+        <input type="range" id="s-tau" min="0.4" max="2" step="0.05" value="1" />
+      </label>
+      <div style="display:flex;align-items:flex-end"><button class="act" id="s-play">Stretch T<sub>0</sub> &rarr; &infin;</button></div>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="s-sc" checked /> Plot T<sub>0</sub>&middot;c<sub>n</sub> (density) instead of c<sub>n</sub></label>
+      <label><input type="checkbox" id="s-env" checked /> Envelope</label>
+    </div>
+
+    <div class="plab"><span>Time domain &mdash; pulse train</span></div>
+    <div class="plot"><canvas id="s-td" height="140" role="img" aria-label="Rectangular pulse train whose pulses separate as the period grows"></canvas></div>
+
+    <div class="plab"><span>Frequency domain</span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>series coefficients</span><span><i style="border-color:var(--rust);border-top-style:dashed"></i>transform of one pulse</span></span>
+    </div>
+    <div class="plot"><canvas id="s-fd" height="230" role="img" aria-label="Discrete series coefficients plotted against the continuous sinc envelope of a single pulse"></canvas></div>
+
+    <div class="metrics">
+      <div><div class="k">Line spacing f<sub>0</sub></div><div class="n" id="s-f0">&mdash;</div></div>
+      <div><div class="k">Duty = c<sub>0</sub></div><div class="n" id="s-duty">&mdash;</div></div>
+      <div><div class="k">Lines per lobe</div><div class="n" id="s-lines">&mdash;</div></div>
+      <div><div class="k">First null 1/&tau;</div><div class="n" id="s-null">&mdash;</div></div>
+    </div>
+
+    <p class="prose" style="margin-top:22px">Unscaled, every line shrinks like 1/T<sub>0</sub> and the spectrum flattens toward nothing &mdash; which looks like information being destroyed. It isn't; the power is spreading across more lines. Multiplying by T<sub>0</sub> converts amplitude-per-line into <strong>amplitude per unit frequency</strong>. That is why X(&omega;) is a spectral density with units of amplitude&middot;time, not an amplitude.</p>
+    <p class="prose">Change &tau; and the envelope moves. Change T<sub>0</sub> and it doesn't. The envelope belongs to the pulse, not to the repetition.</p>
+  </section>
+
+  <!-- ================= PANEL 3 ================= -->
+  <section id="p3" hidden>
+    <h2>Four spellings, one rule</h2>
+    <p class="sub">Each transform is fixed by two yes/no questions about the time-domain signal. The answers determine the spectrum &mdash; you never have to memorize which is which.</p>
+
+    <div class="quad">
+      <div></div>
+      <div class="hlab">Periodic in time</div>
+      <div class="hlab">Aperiodic in time</div>
+
+      <div class="vlab"><span>Continuous</span></div>
+      <div class="cell">
+        <h3>Fourier series</h3><div class="sym">c<sub>n</sub></div>
+        <span class="tag">discrete, aperiodic spectrum</span>
+      </div>
+      <div class="cell">
+        <h3>Fourier transform</h3><div class="sym">X(&omega;)</div>
+        <span class="tag">continuous, aperiodic spectrum</span>
+      </div>
+
+      <div class="vlab"><span>Discrete</span></div>
+      <div class="cell mark">
+        <h3>DFS / DFT</h3><div class="sym">X[k]</div>
+        <span class="tag hot">discrete, periodic spectrum &mdash; the computable one</span>
+      </div>
+      <div class="cell">
+        <h3>DTFT</h3><div class="sym">X(e<sup>j&omega;</sup>)</div>
+        <span class="tag">continuous, periodic spectrum</span>
+      </div>
+    </div>
+
+    <p class="rule-note"><strong style="color:var(--ink);font-weight:500">Discreteness in one domain forces periodicity in the other.</strong> Read any cell backwards and it names its own spectrum.</p>
+
+    <p class="prose" style="margin-top:24px">This is not a mnemonic, it is panel 02 run in reverse. There, sampling the <em>time</em> axis at spacing T<sub>0</sub> made the spectrum a set of lines. The theorem is symmetric: sampling the <em>frequency</em> axis at spacing f<sub>0</sub> periodizes the time signal with period 1/f<sub>0</sub>.</p>
+    <p class="prose">Which is exactly what the DFT does to your data without asking. It sees your record as one period of something infinitely repeating. If the record doesn't hold a whole number of cycles, the repetition has a discontinuity at the seam &mdash; and the energy that jump injects is what panel 05 calls leakage.</p>
+  </section>
+
+  <!-- ================= PANEL 4 ================= -->
+  <section id="p4" hidden>
+    <h2>Sampling puts copies of the spectrum on a grid</h2>
+    <p class="sub">Multiplying by an impulse train in time convolves with an impulse train in frequency. Every copy is faithful until two of them overlap.</p>
+
+    <div class="ctrls">
+      <label class="f"><span class="t">Signal f<sub>sig</sub> (Hz) <span class="v" id="k-fsOut">3.0</span></span>
+        <input type="range" id="k-fsig" min="0.5" max="14" step="0.1" value="3" />
+      </label>
+      <label class="f"><span class="t">Sample rate f<sub>s</sub> (Hz) <span class="v" id="k-srOut">16.0</span></span>
+        <input type="range" id="k-sr" min="3" max="30" step="0.5" value="16" />
+      </label>
+    </div>
+    <div class="toggles">
+      <label><input type="checkbox" id="k-alias" checked /> Show what the samples actually look like</label>
+    </div>
+
+    <div class="plab"><span>Time domain</span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>true signal</span><span><i style="border-color:var(--rust);border-top-style:dashed"></i>lowest sinusoid fitting the samples</span></span>
+    </div>
+    <div class="plot"><canvas id="k-td" height="180" role="img" aria-label="A sinusoid with sample points marked, and the aliased low-frequency sinusoid that fits the same samples"></canvas></div>
+
+    <div class="plab"><span>Frequency domain &mdash; spectral replicas at multiples of f<sub>s</sub></span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>baseband</span><span><i style="border-color:var(--ink3)"></i>replicas</span></span>
+    </div>
+    <div class="plot"><canvas id="k-fd" height="180" role="img" aria-label="Spectral lines repeating at multiples of the sample rate, with the Nyquist band shaded"></canvas></div>
+
+    <div class="metrics">
+      <div><div class="k">Nyquist f<sub>s</sub>/2</div><div class="n" id="k-nyq">&mdash;</div></div>
+      <div><div class="k">Samples per cycle</div><div class="n" id="k-spc">&mdash;</div></div>
+      <div><div class="k">Apparent frequency</div><div class="n" id="k-app">&mdash;</div></div>
+      <div><div class="k">Status</div><div class="n" id="k-stat" style="font-size:15px">&mdash;</div></div>
+    </div>
+
+    <p class="prose" style="margin-top:22px">Push f<sub>sig</sub> past the shaded Nyquist band. Nothing dramatic happens in the time plot &mdash; the samples are still perfectly good numbers. What changes is that a <em>lower</em> sinusoid now passes through every one of them, and no amount of processing can tell you which one was there. The replica from the neighboring copy has landed inside your band and become indistinguishable from a real signal.</p>
+    <p class="prose">The apparent frequency is <code>|f_sig &minus; f_s&middot;round(f_sig/f_s)|</code>. Watch it fold back and forth as you sweep &mdash; that reflection off the Nyquist edge is why the effect is drawn as a folding diagram in older texts.</p>
+  </section>
+
+  <!-- ================= PANEL 5 ================= -->
+  <section id="p5" hidden>
+    <h2>Leakage is a seam, and windows soften it</h2>
+    <p class="sub">A pure sinusoid analyzed by a 64-point DFT. When the record holds a whole number of cycles, one bin lights up. Half a cycle short, and energy sprays everywhere.</p>
+
+    <div class="ctrls">
+      <label class="f"><span class="t">Cycles in record k<sub>0</sub> <span class="v" id="w-k0Out">10.00</span></span>
+        <input type="range" id="w-k0" min="6" max="14" step="0.05" value="10" />
+      </label>
+      <label class="f"><span class="t">Window</span>
+        <select id="w-win">
+          <option value="rect">Rectangular (none)</option>
+          <option value="hann">Hann</option>
+          <option value="hamming">Hamming</option>
+          <option value="blackman">Blackman&ndash;Harris</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="plab"><span>Windowed record &mdash; N = 64, shown wrapped end-to-start so the seam is visible</span>
+      <span class="key"><span><i style="border-color:var(--indigo)"></i>windowed samples</span><span><i style="border-color:var(--ink3);border-top-style:dashed"></i>window shape</span></span>
+    </div>
+    <div class="plot"><canvas id="w-td" height="170" role="img" aria-label="A 64-sample windowed sinusoid shown across the record boundary to reveal the discontinuity"></canvas></div>
+
+    <div class="plab"><span>DFT magnitude (dB, normalized to peak)</span></div>
+    <div class="plot"><canvas id="w-fd" height="210" role="img" aria-label="Discrete Fourier transform magnitude in decibels showing the mainlobe and leakage sidelobes"></canvas></div>
+
+    <div class="metrics">
+      <div><div class="k">Bin offset</div><div class="n" id="w-off">&mdash;</div></div>
+      <div><div class="k">Peak sidelobe</div><div class="n" id="w-sl">&mdash;</div></div>
+      <div><div class="k">Scalloping loss</div><div class="n" id="w-sc">&mdash;</div></div>
+      <div><div class="k">&minus;3 dB width</div><div class="n" id="w-bw">&mdash;</div></div>
+    </div>
+
+    <p class="prose" style="margin-top:22px">Set k<sub>0</sub> to exactly 10 with no window: a single bin, everything else at the numerical floor. Nudge to 10.5 and the floor rises by fifty-odd decibels. Nothing changed about the signal &mdash; only about whether the periodic extension is continuous at the seam.</p>
+    <p class="prose">Now switch windows at k<sub>0</sub> = 10.5. Sidelobes drop hard, and the mainlobe widens in exchange. That trade is the whole design space: <strong>rectangular</strong> resolves closely spaced equal-amplitude tones best, <strong>Blackman&ndash;Harris</strong> is what you want when a small tone sits near a large one. The 1/n coefficient decay you watched on the square wave in panel 01 is this same discontinuity penalty, seen from the other side.</p>
+  </section>
+
+  </main>
+</div>
+
+<footer>Single file &middot; no dependencies &middot; works offline</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var TAU=Math.PI*2;
+
+/* ---------- shared drawing helpers ---------- */
+function C(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
+var COL={};
+function loadCols(){
+  COL={ink:C('--ink'),ink2:C('--ink2'),ink3:C('--ink3'),rule:C('--rule'),rule2:C('--rule2'),
+       indigo:C('--indigo'),rust:C('--rust'),iSoft:C('--indigo-soft'),rSoft:C('--rust-soft'),panel:C('--panel')};
+}
+loadCols();
+if(window.matchMedia){var mq=matchMedia('(prefers-color-scheme:dark)');
+  if(mq.addEventListener)mq.addEventListener('change',function(){loadCols();redrawActive();});}
+
+function fit(cv,h){
+  var W=cv.parentElement.clientWidth||cv.clientWidth||600;
+  var H=h||cv.height||200, dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width='100%'; cv.style.height=H+'px';
+  var c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+  return {c:c,W:W,H:H};
+}
+function tick(c,x,y,txt,align){c.fillStyle=COL.ink3;c.font='10px '+getComputedStyle(document.body).fontFamily;c.textAlign=align||'center';c.fillText(txt,x,y);}
+function sinc(x){return Math.abs(x)<1e-12?1:Math.sin(Math.PI*x)/(Math.PI*x);}
+
+/* ================= HERO ================= */
+(function(){
+  var cv=document.getElementById('heroCv'), frame=0, raf=null;
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function draw(N){
+    var s=fit(cv,cv.parentElement.clientHeight||96),c=s.c,W=s.W,H=s.H;
+    var mid=H/2, amp=H*0.34;
+    c.strokeStyle=COL.rule; c.lineWidth=1;
+    c.beginPath();c.moveTo(0,mid);c.lineTo(W,mid);c.stroke();
+    c.strokeStyle=COL.indigo; c.lineWidth=1.6; c.lineJoin='round'; c.beginPath();
+    for(var p=0;p<=900;p++){
+      var t=p/900*TAU*2, v=0;
+      for(var n=1;n<=N;n+=2) v+=(4/(Math.PI*n))*Math.sin(n*t);
+      var x=p/900*W, y=mid-v*amp/1.28;
+      p?c.lineTo(x,y):c.moveTo(x,y);
+    }
+    c.stroke();
+  }
+  if(reduce){draw(41);return;}
+  function step(){
+    frame++;
+    var N=Math.min(41,1+2*Math.floor(frame/3));
+    draw(N);
+    if(N<41) raf=requestAnimationFrame(step); else raf=null;
+  }
+  raf=requestAnimationFrame(step);
+  window.addEventListener('resize',function(){if(!raf)draw(41);});
+})();
+
+/* ================= PANEL 1 : SERIES ANALYZER ================= */
+var P1=(function(){
+  var M=4096,NMAX=60,co={a0:0,a:null,b:null,c:null,f:null},lastKey='';
+  function target(name,t,d){
+    var x=((t%TAU)+TAU)%TAU;
+    switch(name){
+      case 'square':return x<Math.PI?1:-1;
+      case 'saw':return x/Math.PI-1;
+      case 'tri':return (2/Math.PI)*Math.asin(Math.sin(x));
+      case 'pulse':return x<TAU*d?1:0;
+      case 'halfrect':return Math.max(Math.sin(x),0);
+      case 'fullrect':return Math.abs(Math.sin(x));
+      case 'expdecay':return Math.exp(-3*x/TAU)*2-1;
+    } return 0;
+  }
+  function analyze(name,d){
+    var a0=0,a=new Float64Array(NMAX+1),b=new Float64Array(NMAX+1),f=new Float64Array(M),i,n,j;
+    for(i=0;i<M;i++){f[i]=target(name,i*TAU/M,d);a0+=f[i];}
+    a0/=M;
+    for(n=1;n<=NMAX;n++){
+      var sa=0,sb=0;
+      for(j=0;j<M;j++){var th=n*j*TAU/M;sa+=f[j]*Math.cos(th);sb+=f[j]*Math.sin(th);}
+      a[n]=2*sa/M;b[n]=2*sb/M;
+    }
+    var cc=new Float64Array(NMAX+1);
+    for(var k=1;k<=NMAX;k++)cc[k]=Math.hypot(a[k],b[k]);
+    co={a0:a0,a:a,b:b,c:cc,f:f};
+  }
+  function partial(t,N){var s=co.a0;for(var n=1;n<=N;n++)s+=co.a[n]*Math.cos(n*t)+co.b[n]*Math.sin(n*t);return s;}
+
+  function drawWave(name,N,d,showH,showT){
+    var s=fit(document.getElementById('a-wave'),250),c=s.c,W=s.W,H=s.H;
+    var pl=36,pr=14,pt=16,pb=24,pw=W-pl-pr,ph=H-pt-pb,yM=1.35,tM=2*TAU;
+    var X=function(t){return pl+t/tM*pw;}, Y=function(v){return pt+ph/2-v/yM*(ph/2);};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    [-1,-0.5,0.5,1].forEach(function(v){c.beginPath();c.moveTo(pl,Y(v));c.lineTo(W-pr,Y(v));c.stroke();});
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(0));c.lineTo(W-pr,Y(0));c.stroke();
+    [-1,0,1].forEach(function(v){tick(c,pl-6,Y(v)+4,v.toFixed(0),'right');});
+    [1,2].forEach(function(k){tick(c,X(k*TAU),H-7,k+'T');});
+    if(showH){c.lineWidth=1;c.strokeStyle=COL.iSoft;
+      for(var n=1;n<=N;n++){c.beginPath();
+        for(var p=0;p<=600;p++){var t=p/600*tM,v=co.a[n]*Math.cos(n*t)+co.b[n]*Math.sin(n*t);p?c.lineTo(X(t),Y(v)):c.moveTo(X(t),Y(v));}
+        c.stroke();}}
+    if(showT){c.strokeStyle=COL.ink3;c.lineWidth=1.6;c.setLineDash([5,4]);c.beginPath();
+      for(var q=0;q<=1600;q++){var tt=q/1600*tM,vv=target(name,tt,d);q?c.lineTo(X(tt),Y(vv)):c.moveTo(X(tt),Y(vv));}
+      c.stroke();c.setLineDash([]);}
+    c.strokeStyle=COL.indigo;c.lineWidth=2;c.lineJoin='round';c.beginPath();
+    for(var r=0;r<=1400;r++){var t3=r/1400*tM,v3=partial(t3,N);r?c.lineTo(X(t3),Y(v3)):c.moveTo(X(t3),Y(v3));}
+    c.stroke();
+  }
+
+  function drawMag(N,db){
+    var s=fit(document.getElementById('a-mag'),180),c=s.c,W=s.W,H=s.H;
+    var pl=42,pr=14,pt=14,pb=26,pw=W-pl-pr,ph=H-pt-pb;
+    var top=0,bot=0;
+    if(db){top=0;bot=-80;}else{top=0;for(var i=1;i<=NMAX;i++)top=Math.max(top,co.c[i]);top=top*1.1||1;bot=0;}
+    var X=function(n){return pl+(n-0.5)/NMAX*pw;},Y=function(v){return pt+(top-v)/(top-bot)*ph;};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    for(var g=0;g<=4;g++){var yy=pt+g/4*ph;c.beginPath();c.moveTo(pl,yy);c.lineTo(W-pr,yy);c.stroke();
+      tick(c,pl-6,yy+4,(top-(g/4)*(top-bot)).toFixed(db?0:2),'right');}
+    for(var n=1;n<=NMAX;n++){
+      var mag=co.c[n], v=db?(mag>1e-9?20*Math.log10(mag):-999):mag;
+      if(v<bot)v=bot;
+      c.strokeStyle=n<=N?COL.indigo:COL.ink3;c.lineWidth=n<=N?2:1;
+      c.beginPath();c.moveTo(X(n),Y(bot));c.lineTo(X(n),Y(v));c.stroke();
+    }
+    for(var t=10;t<=60;t+=10)tick(c,X(t),H-8,t);
+    tick(c,pl+pw/2,H-8,'');
+  }
+
+  function drawPhase(N){
+    var cv=document.getElementById('a-phase');
+    var s=fit(cv,150),c=s.c,W=s.W,H=s.H;
+    var pl=42,pr=14,pt=14,pb=24,pw=W-pl-pr,ph=H-pt-pb;
+    var X=function(n){return pl+(n-0.5)/NMAX*pw;},Y=function(v){return pt+(180-v)/360*ph;};
+    var peak=0;for(var i=1;i<=NMAX;i++)peak=Math.max(peak,co.c[i]);
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    [180,90,-90,-180].forEach(function(v){c.beginPath();c.moveTo(pl,Y(v));c.lineTo(W-pr,Y(v));c.stroke();});
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(0));c.lineTo(W-pr,Y(0));c.stroke();
+    [180,0,-180].forEach(function(v){tick(c,pl-6,Y(v)+4,v,'right');});
+    for(var n=1;n<=NMAX;n++){
+      if(co.c[n]<peak*0.02)continue;
+      var phse=Math.atan2(-co.b[n],co.a[n])*180/Math.PI;
+      c.fillStyle=n<=N?COL.indigo:COL.ink3;
+      c.beginPath();c.arc(X(n),Y(phse),n<=N?3:2,0,TAU);c.fill();
+    }
+    for(var t=10;t<=60;t+=10)tick(c,X(t),H-7,t);
+  }
+
+  function metrics(N){
+    var se=0,pT=0,pR=0,i;
+    for(i=0;i<M;i++){var t=i*TAU/M,tv=co.f[i],rv=partial(t,N);se+=(tv-rv)*(tv-rv);
+      if(Math.abs(tv)>pT)pT=Math.abs(tv); if(Math.abs(rv)>pR)pR=Math.abs(rv);}
+    var rms=Math.sqrt(se/M), over=pT>1e-9?(pR/pT-1)*100:0;
+    var acAll=0,acIn=0,harm=0;
+    for(var n=1;n<=NMAX;n++){acAll+=co.c[n]*co.c[n];if(n<=N)acIn+=co.c[n]*co.c[n];}
+    for(var k=2;k<=NMAX;k++)harm+=co.c[k]*co.c[k];
+    var thd=co.c[1]>1e-6?Math.sqrt(harm)/co.c[1]*100:NaN;
+    document.getElementById('a-rms').textContent=rms.toFixed(4);
+    document.getElementById('a-gib').textContent=(over>=0?'+':'')+over.toFixed(2)+'%';
+    document.getElementById('a-thd').textContent=isNaN(thd)?'n/a':thd.toFixed(1)+'%';
+    document.getElementById('a-pow').textContent=(acAll>1e-12?acIn/acAll*100:100).toFixed(2)+'%';
+  }
+
+  function render(){
+    var name=document.getElementById('a-wf').value,
+        N=+document.getElementById('a-n').value,
+        d=+document.getElementById('a-d').value;
+    document.getElementById('a-nOut').textContent=N;
+    document.getElementById('a-dOut').textContent=d.toFixed(2);
+    var key=name+'|'+(name==='pulse'?d.toFixed(2):'');
+    if(key!==lastKey){analyze(name,d);lastKey=key;}
+    var showPh=document.getElementById('a-ph').checked;
+    document.getElementById('a-phWrap').style.display=showPh?'':'none';
+    drawWave(name,N,d,document.getElementById('a-h').checked,document.getElementById('a-t').checked);
+    metrics(N);
+    drawMag(N,document.getElementById('a-db').checked);
+    if(showPh)drawPhase(N);
+  }
+  ['a-wf','a-n','a-d','a-h','a-t','a-db','a-ph'].forEach(function(id){
+    var e=document.getElementById(id);e.addEventListener('input',render);e.addEventListener('change',render);});
+  return {render:render};
+})();
+
+/* ================= PANEL 2 : PERIOD STRETCH ================= */
+var P2=(function(){
+  function drawTime(T0,tau){
+    var s=fit(document.getElementById('s-td'),140),c=s.c,W=s.W,H=s.H;
+    var pl=30,pr=14,pt=14,pb=22,pw=W-pl-pr,ph=H-pt-pb,tM=10;
+    var X=function(t){return pl+(t+tM)/(2*tM)*pw;},y0=pt+ph*0.84,y1=pt+ph*0.10;
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    for(var g=-10;g<=10;g+=5){c.beginPath();c.moveTo(X(g),pt);c.lineTo(X(g),y0);c.stroke();}
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,y0);c.lineTo(W-pr,y0);c.stroke();
+    var kM=Math.ceil((tM+tau)/T0)+1;
+    c.fillStyle=COL.iSoft;c.strokeStyle=COL.indigo;c.lineWidth=1.8;
+    for(var k=-kM;k<=kM;k++){
+      var ctr=k*T0,a=ctr-tau/2,b=ctr+tau/2;
+      if(b<-tM||a>tM)continue;
+      var xa=X(Math.max(a,-tM)),xb=X(Math.min(b,tM));
+      c.fillRect(xa,y1,xb-xa,y0-y1);
+      c.beginPath();c.moveTo(xa,y0);c.lineTo(xa,y1);c.lineTo(xb,y1);c.lineTo(xb,y0);c.stroke();
+    }
+    for(var t=-10;t<=10;t+=5)tick(c,X(t),H-7,t);
+    tick(c,pl-5,y1+4,'1','right');tick(c,pl-5,y0+4,'0','right');
+  }
+  function drawFreq(T0,tau,scaled,env){
+    var s=fit(document.getElementById('s-fd'),230),c=s.c,W=s.W,H=s.H;
+    var pl=42,pr=14,pt=16,pb=26,pw=W-pl-pr,ph=H-pt-pb,fM=5;
+    var top=scaled?2.2:1.1,bot=scaled?-0.6:-0.3;
+    var X=function(f){return pl+(f+fM)/(2*fM)*pw;},Y=function(v){return pt+(top-v)/(top-bot)*ph;};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    for(var g=-5;g<=5;g++){c.beginPath();c.moveTo(X(g),pt);c.lineTo(X(g),pt+ph);c.stroke();}
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(0));c.lineTo(W-pr,Y(0));c.stroke();
+    for(var f=-4;f<=4;f+=2)tick(c,X(f),H-8,f);
+    (scaled?[0,1,2]:[0,0.5,1]).forEach(function(v){tick(c,pl-6,Y(v)+4,v.toFixed(1),'right');});
+    if(env){
+      c.strokeStyle=COL.rust;c.lineWidth=1.8;c.setLineDash([5,4]);c.beginPath();
+      for(var p=0;p<=1000;p++){var ff=-fM+p/1000*2*fM,ev=(scaled?tau:tau/T0)*sinc(ff*tau);
+        p?c.lineTo(X(ff),Y(ev)):c.moveTo(X(ff),Y(ev));}
+      c.stroke();c.setLineDash([]);
+    }
+    var nM=Math.floor(fM*T0),thin=nM>150;
+    c.strokeStyle=COL.indigo;c.fillStyle=COL.indigo;c.lineWidth=thin?1:1.6;
+    for(var n=-nM;n<=nM;n++){
+      var fn=n/T0,cn=(tau/T0)*sinc(n*tau/T0),val=scaled?cn*T0:cn;
+      c.beginPath();c.moveTo(X(fn),Y(0));c.lineTo(X(fn),Y(val));c.stroke();
+      if(!thin){c.beginPath();c.arc(X(fn),Y(val),2.1,0,TAU);c.fill();}
+    }
+  }
+  var anim=null,btn=document.getElementById('s-play');
+  function render(){
+    var T0=+document.getElementById('s-t0').value,tau=+document.getElementById('s-tau').value;
+    if(tau>T0){tau=T0;document.getElementById('s-tau').value=tau;}
+    document.getElementById('s-t0Out').textContent=T0.toFixed(1);
+    document.getElementById('s-tauOut').textContent=tau.toFixed(2);
+    drawTime(T0,tau);
+    drawFreq(T0,tau,document.getElementById('s-sc').checked,document.getElementById('s-env').checked);
+    document.getElementById('s-f0').textContent=(1/T0).toFixed(3);
+    document.getElementById('s-duty').textContent=(tau/T0).toFixed(3);
+    document.getElementById('s-lines').textContent=Math.round(T0/tau);
+    document.getElementById('s-null').textContent=(1/tau).toFixed(2);
+  }
+  btn.addEventListener('click',function(){
+    if(anim){cancelAnimationFrame(anim);anim=null;btn.innerHTML='Stretch T<sub>0</sub> &rarr; &infin;';return;}
+    btn.textContent='Pause';
+    var v=+document.getElementById('s-t0').value;
+    (function step(){
+      v+=0.18;
+      if(v>=40){v=40;document.getElementById('s-t0').value=v;render();anim=null;btn.innerHTML='Stretch T<sub>0</sub> &rarr; &infin;';return;}
+      document.getElementById('s-t0').value=v;render();anim=requestAnimationFrame(step);
+    })();
+  });
+  ['s-t0','s-tau','s-sc','s-env'].forEach(function(id){
+    var e=document.getElementById(id);e.addEventListener('input',render);e.addEventListener('change',render);});
+  return {render:render};
+})();
+
+/* ================= PANEL 4 : SAMPLING ================= */
+var P4=(function(){
+  function apparent(fsig,fs){return Math.abs(fsig-fs*Math.round(fsig/fs));}
+  function drawTime(fsig,fs,showA){
+    var s=fit(document.getElementById('k-td'),180),c=s.c,W=s.W,H=s.H;
+    var pl=30,pr=14,pt=16,pb=24,pw=W-pl-pr,ph=H-pt-pb,tM=1;
+    var X=function(t){return pl+t/tM*pw;},Y=function(v){return pt+ph/2-v*(ph/2)*0.86;};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    for(var g=0;g<=4;g++){var xx=pl+g/4*pw;c.beginPath();c.moveTo(xx,pt);c.lineTo(xx,pt+ph);c.stroke();}
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(0));c.lineTo(W-pr,Y(0));c.stroke();
+    c.strokeStyle=COL.indigo;c.lineWidth=1.8;c.beginPath();
+    for(var p=0;p<=1400;p++){var t=p/1400,v=Math.sin(TAU*fsig*t);p?c.lineTo(X(t),Y(v)):c.moveTo(X(t),Y(v));}
+    c.stroke();
+    if(showA){
+      var fa=apparent(fsig,fs);
+      var kk=Math.round(fsig/fs), sign=(fsig-fs*kk)>=0?1:-1;
+      c.strokeStyle=COL.rust;c.lineWidth=1.8;c.setLineDash([5,4]);c.beginPath();
+      for(var q=0;q<=1400;q++){var t2=q/1400,v2=sign*Math.sin(TAU*fa*t2);q?c.lineTo(X(t2),Y(v2)):c.moveTo(X(t2),Y(v2));}
+      c.stroke();c.setLineDash([]);
+    }
+    c.fillStyle=COL.ink;
+    for(var n=0;n<=Math.floor(fs);n++){
+      var tn=n/fs; if(tn>1)break;
+      var vn=Math.sin(TAU*fsig*tn);
+      c.beginPath();c.arc(X(tn),Y(vn),3,0,TAU);c.fill();
+      c.strokeStyle=COL.rule2;c.lineWidth=1;c.beginPath();c.moveTo(X(tn),Y(0));c.lineTo(X(tn),Y(vn));c.stroke();
+    }
+    tick(c,pl,H-7,'0');tick(c,W-pr,H-7,'1 s','right');
+  }
+  function drawFreq(fsig,fs){
+    var s=fit(document.getElementById('k-fd'),180),c=s.c,W=s.W,H=s.H;
+    var pl=30,pr=14,pt=18,pb=26,pw=W-pl-pr,ph=H-pt-pb,fM=42;
+    var X=function(f){return pl+(f+fM)/(2*fM)*pw;},y0=pt+ph;
+    var nyq=fs/2;
+    c.fillStyle=COL.rSoft;c.fillRect(X(-nyq),pt,X(nyq)-X(-nyq),ph);
+    c.strokeStyle=COL.rust;c.lineWidth=1;c.setLineDash([3,3]);
+    [-nyq,nyq].forEach(function(f){c.beginPath();c.moveTo(X(f),pt);c.lineTo(X(f),y0);c.stroke();});
+    c.setLineDash([]);
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,y0);c.lineTo(W-pr,y0);c.stroke();
+    var kM=Math.ceil((fM+fsig)/fs)+1;
+    for(var k=-kM;k<=kM;k++){
+      for(var sgn=-1;sgn<=1;sgn+=2){
+        var f=k*fs+sgn*fsig;
+        if(f<-fM||f>fM)continue;
+        var base=(k===0);
+        c.strokeStyle=base?COL.indigo:COL.ink3;c.lineWidth=base?2.2:1.4;
+        c.beginPath();c.moveTo(X(f),y0);c.lineTo(X(f),pt+6);c.stroke();
+        c.fillStyle=base?COL.indigo:COL.ink3;
+        c.beginPath();c.arc(X(f),pt+6,base?3:2.2,0,TAU);c.fill();
+      }
+    }
+    for(var t=-40;t<=40;t+=20)tick(c,X(t),H-8,t);
+    tick(c,X(nyq),pt-6,'f\u209B/2');
+  }
+  function render(){
+    var fsig=+document.getElementById('k-fsig').value, fs=+document.getElementById('k-sr').value;
+    document.getElementById('k-fsOut').textContent=fsig.toFixed(1);
+    document.getElementById('k-srOut').textContent=fs.toFixed(1);
+    drawTime(fsig,fs,document.getElementById('k-alias').checked);
+    drawFreq(fsig,fs);
+    var fa=apparent(fsig,fs), ok=fsig<fs/2-1e-9;
+    document.getElementById('k-nyq').textContent=(fs/2).toFixed(2);
+    document.getElementById('k-spc').textContent=(fs/fsig).toFixed(2);
+    document.getElementById('k-app').textContent=fa.toFixed(2)+' Hz';
+    var st=document.getElementById('k-stat');
+    st.textContent=ok?'faithful':'aliased';
+    st.style.color=ok?COL.ink:COL.rust;
+  }
+  ['k-fsig','k-sr','k-alias'].forEach(function(id){
+    var e=document.getElementById(id);e.addEventListener('input',render);e.addEventListener('change',render);});
+  return {render:render};
+})();
+
+/* ================= PANEL 5 : LEAKAGE ================= */
+var P5=(function(){
+  var N=64;
+  function winVal(kind,n){
+    var r=n/(N-1);
+    switch(kind){
+      case 'hann':return 0.5-0.5*Math.cos(TAU*r);
+      case 'hamming':return 0.54-0.46*Math.cos(TAU*r);
+      case 'blackman':return 0.35875-0.48829*Math.cos(TAU*r)+0.14128*Math.cos(2*TAU*r)-0.01168*Math.cos(3*TAU*r);
+    }
+    return 1;
+  }
+  function compute(k0,kind){
+    var x=new Float64Array(N),w=new Float64Array(N),n;
+    for(n=0;n<N;n++){w[n]=winVal(kind,n);x[n]=Math.cos(TAU*k0*n/N)*w[n];}
+    var mag=new Float64Array(N/2+1);
+    for(var k=0;k<=N/2;k++){
+      var re=0,im=0;
+      for(n=0;n<N;n++){var th=TAU*k*n/N;re+=x[n]*Math.cos(th);im-=x[n]*Math.sin(th);}
+      mag[k]=Math.hypot(re,im);
+    }
+    return {x:x,w:w,mag:mag};
+  }
+  function drawTime(r){
+    var s=fit(document.getElementById('w-td'),170),c=s.c,W=s.W,H=s.H;
+    var pl=30,pr=14,pt=16,pb=24,pw=W-pl-pr,ph=H-pt-pb;
+    var X=function(i){return pl+i/(2*N-1)*pw;},Y=function(v){return pt+ph/2-v*(ph/2)*0.88;};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    c.beginPath();c.moveTo(X(N-0.5),pt);c.lineTo(X(N-0.5),pt+ph);c.stroke();
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(0));c.lineTo(W-pr,Y(0));c.stroke();
+    c.strokeStyle=COL.ink3;c.lineWidth=1.4;c.setLineDash([4,3]);c.beginPath();
+    for(var i=0;i<2*N;i++){var wv=r.w[i%N];i?c.lineTo(X(i),Y(wv)):c.moveTo(X(i),Y(wv));}
+    c.stroke();c.setLineDash([]);
+    c.strokeStyle=COL.indigo;c.lineWidth=1.7;c.beginPath();
+    for(var j=0;j<2*N;j++){var v=r.x[j%N];j?c.lineTo(X(j),Y(v)):c.moveTo(X(j),Y(v));}
+    c.stroke();
+    c.fillStyle=COL.rust;c.font='10px '+getComputedStyle(document.body).fontFamily;c.textAlign='center';
+    c.fillText('seam',X(N-0.5),pt+10);
+    tick(c,pl,H-7,'0');tick(c,X(2*N-1),H-7,'2N','right');
+  }
+  function drawFreq(r){
+    var s=fit(document.getElementById('w-fd'),210),c=s.c,W=s.W,H=s.H;
+    var pl=42,pr=14,pt=14,pb=26,pw=W-pl-pr,ph=H-pt-pb,floorDb=-110;
+    var peak=0,k;for(k=0;k<r.mag.length;k++)peak=Math.max(peak,r.mag[k]);
+    var X=function(kk){return pl+kk/(N/2)*pw;},Y=function(db){return pt+(0-db)/(0-floorDb)*ph;};
+    c.strokeStyle=COL.rule;c.lineWidth=1;
+    for(var g=0;g>=-100;g-=20){c.beginPath();c.moveTo(pl,Y(g));c.lineTo(W-pr,Y(g));c.stroke();tick(c,pl-6,Y(g)+4,g,'right');}
+    c.strokeStyle=COL.rule2;c.beginPath();c.moveTo(pl,Y(floorDb));c.lineTo(W-pr,Y(floorDb));c.stroke();
+    for(k=0;k<r.mag.length;k++){
+      var db=r.mag[k]>1e-14?20*Math.log10(r.mag[k]/peak):floorDb;
+      if(db<floorDb)db=floorDb;
+      c.strokeStyle=COL.indigo;c.lineWidth=2;
+      c.beginPath();c.moveTo(X(k),Y(floorDb));c.lineTo(X(k),Y(db));c.stroke();
+      c.fillStyle=COL.indigo;c.beginPath();c.arc(X(k),Y(db),2,0,TAU);c.fill();
+    }
+    for(var t=0;t<=32;t+=8)tick(c,X(t),H-8,t);
+  }
+  function render(){
+    var k0=+document.getElementById('w-k0').value, kind=document.getElementById('w-win').value;
+    document.getElementById('w-k0Out').textContent=k0.toFixed(2);
+    var r=compute(k0,kind);
+    drawTime(r);drawFreq(r);
+    var peak=0,pk=0,i;
+    for(i=0;i<r.mag.length;i++)if(r.mag[i]>peak){peak=r.mag[i];pk=i;}
+    var sl=0;
+    for(i=0;i<r.mag.length;i++){ if(Math.abs(i-k0)<=3) continue; sl=Math.max(sl,r.mag[i]); }
+    var slDb=sl>1e-14?20*Math.log10(sl/peak):-999;
+    var ref=compute(Math.round(k0),kind), refPeak=0;
+    for(i=0;i<ref.mag.length;i++)refPeak=Math.max(refPeak,ref.mag[i]);
+    var scal=refPeak>0?20*Math.log10(peak/refPeak):0;
+    var half=peak/Math.SQRT2,lo=pk,hi=pk;
+    while(lo>0&&r.mag[lo]>half)lo--;
+    while(hi<r.mag.length-1&&r.mag[hi]>half)hi++;
+    document.getElementById('w-off').textContent=(k0-Math.round(k0)).toFixed(2);
+    document.getElementById('w-sl').textContent=slDb.toFixed(1)+' dB';
+    document.getElementById('w-sc').textContent=scal.toFixed(2)+' dB';
+    document.getElementById('w-bw').textContent=(hi-lo).toFixed(1)+' bins';
+  }
+  ['w-k0','w-win'].forEach(function(id){
+    var e=document.getElementById(id);e.addEventListener('input',render);e.addEventListener('change',render);});
+  return {render:render};
+})();
+
+/* ================= TABS + GUTTER ================= */
+var GUT={
+  p1:{eq:'c<sub>n</sub> = (1/T<sub>0</sub>) &int; x(t) e<sup>&minus;jn&omega;<sub>0</sub>t</sup> dt',
+      note:'The analysis equation. Every coefficient is one inner product between the signal and a complex exponential.'},
+  p2:{eq:'c<sub>n</sub> = X(n&omega;<sub>0</sub>) / T<sub>0</sub>',
+      note:'The bridge. Series coefficients are the transform of one period, sampled on a grid of spacing &omega;<sub>0</sub> and divided by T<sub>0</sub>. Let T<sub>0</sub>&rarr;&infin; and the synthesis sum becomes the inverse-transform integral.'},
+  p3:{eq:'discrete &harr; periodic',
+      note:'Sampling one domain periodizes the other. Both directions of panel 02, stated once.'},
+  p4:{eq:'X<sub>s</sub>(f) = f<sub>s</sub> &sum;<sub>k</sub> X(f &minus; k f<sub>s</sub>)',
+      note:'Sampling in time replicates the spectrum every f<sub>s</sub>. Aliasing is simply two replicas overlapping.'},
+  p5:{eq:'X[k] = &sum;<sub>n</sub> x[n] w[n] e<sup>&minus;j2&pi;kn/N</sup>',
+      note:'The DFT assumes your record repeats forever. w[n] is the apology for the fact that it doesn\u2019t line up.'}
+};
+var cur='p1';
+function redrawActive(){
+  if(cur==='p1')P1.render();
+  else if(cur==='p2')P2.render();
+  else if(cur==='p4')P4.render();
+  else if(cur==='p5')P5.render();
+}
+function show(id){
+  cur=id;
+  Array.prototype.forEach.call(document.querySelectorAll('main section'),function(s){s.hidden=(s.id!==id);});
+  Array.prototype.forEach.call(document.querySelectorAll('nav button'),function(b){
+    b.setAttribute('aria-selected',b.dataset.p===id?'true':'false');});
+  document.getElementById('gutEq').innerHTML='<p class="eq">'+GUT[id].eq+'</p>';
+  document.getElementById('gutNote').innerHTML=GUT[id].note;
+  redrawActive();
+}
+Array.prototype.forEach.call(document.querySelectorAll('nav button'),function(b){
+  b.addEventListener('click',function(){show(b.dataset.p);});
+});
+var rt=null;
+window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(redrawActive,120);});
+show('p1');
+})();
+</script>
+</body>
+</html>
