@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Aperture — International Stadium Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --graphite:#23282B;
+  --graphite-deep:#171B1D;
+  --timber:#C89B6D;
+  --timber-dim:#9a7550;
+  --pitch:#2E6B45;
+  --pitch-bright:#4BA46A;
+  --chalk:#EDEBE4;
+  --chalk-dim:#DAD6CA;
+  --sky:#A8C4CE;
+  --ink:#2A2C2A;
+  --flood:#F5F2E4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',sans-serif;background:var(--chalk);color:var(--ink);line-height:1.6;font-size:16px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.display{font-family:'Big Shoulders Display',sans-serif}
+
+/* ---------- wayfinding plaque device ---------- */
+.plaque{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.plaque::before{content:"";width:.65rem;height:.65rem;background:var(--timber);flex:none}
+.section-dark .plaque{color:var(--sky)}
+.section-light .plaque{color:var(--timber-dim)}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:linear-gradient(180deg,#0E1214 0%, #171F22 55%, #1B2A26 100%);
+  color:var(--flood);
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  position:relative;overflow:hidden;
+  padding:0 0 0 0;
+}
+.hero-svg{position:absolute;inset:0;width:100%;height:100%;}
+.hero-content{
+  position:relative;z-index:2;
+  padding:3rem clamp(1.25rem,5vw,4.5rem) 2.5rem;
+}
+.hero h1{
+  font-family:'Big Shoulders Display';font-weight:800;
+  font-size:clamp(4rem,15vw,13rem);
+  line-height:.88;letter-spacing:.01em;text-transform:uppercase;
+  color:var(--flood);
+}
+.hero .sub{
+  max-width:34rem;margin-top:1.4rem;color:var(--sky);
+  font-size:clamp(.95rem,1.4vw,1.1rem);
+}
+.hero-stats{
+  display:flex;flex-wrap:wrap;gap:0;margin-top:2.5rem;
+  border-top:1px solid rgba(200,155,109,.35);
+}
+.hero-stats>div{
+  padding:1.1rem 2rem 1.1rem 0;margin-right:2rem;
+  border-right:1px solid rgba(200,155,109,.2);
+}
+.hero-stats>div:last-child{border-right:none}
+.hero-stats .num{font-family:'Big Shoulders Display';font-weight:700;font-size:2.2rem;line-height:1;color:var(--timber)}
+.hero-stats .lbl{font-family:'IBM Plex Mono';font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sky);margin-top:.35rem}
+.hero-top{
+  position:absolute;top:0;left:0;right:0;z-index:3;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.5rem clamp(1.25rem,5vw,4.5rem);
+  font-family:'IBM Plex Mono';font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sky);
+}
+.hero-top .mark{display:flex;align-items:center;gap:.6rem;color:var(--flood)}
+.hero-top .mark::before{content:"";width:.8rem;height:.8rem;border:2px solid var(--timber);border-radius:50%}
+
+/* floodlight beams */
+@keyframes floodPulse{0%,100%{opacity:.55}50%{opacity:.8}}
+.beam{animation:floodPulse 7s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.beam{animation:none}}
+
+/* ---------- generic section ---------- */
+section{padding:clamp(3.5rem,8vw,7rem) clamp(1.25rem,5vw,4.5rem)}
+.section-light{background:var(--chalk);color:var(--ink)}
+.section-dark{background:var(--graphite);color:var(--chalk)}
+.sec-head{max-width:60rem;margin-bottom:3rem}
+.sec-head h2{
+  font-family:'Big Shoulders Display';font-weight:700;text-transform:uppercase;
+  font-size:clamp(2.2rem,5vw,4rem);line-height:.95;margin:.6rem 0 .9rem;
+}
+.sec-head p{max-width:38rem;font-size:1rem}
+.section-dark .sec-head p{color:#B9C4C9}
+.section-light .sec-head p{color:#4a4d49}
+
+/* ---------- IRIS ROOF ---------- */
+.iris-wrap{
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:clamp(2rem,5vw,5rem);align-items:center;
+}
+.iris-stage{
+  background:var(--graphite-deep);
+  border:1px solid #333a3e;
+  padding:clamp(1rem,3vw,2.5rem);
+  position:relative;
+}
+.iris-stage .corner{position:absolute;font-family:'IBM Plex Mono';font-size:.62rem;letter-spacing:.12em;color:#5c6a70;text-transform:uppercase}
+.corner.tl{top:.7rem;left:.9rem}.corner.br{bottom:.7rem;right:.9rem}
+#irisSvg{width:100%;height:auto;display:block}
+.petal{
+  fill:rgba(168,196,206,.16);
+  stroke:var(--sky);stroke-width:1.2;
+  transition:transform 2.8s cubic-bezier(.5,0,.2,1);
+  transform-box:fill-box;
+}
+@media (prefers-reduced-motion:reduce){.petal{transition:none}}
+.iris-open .petal{transform:rotate(52deg)}
+.roof-controls{margin-top:1.4rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.toggle-btn{
+  font-family:'IBM Plex Mono';font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+  background:var(--timber);color:var(--graphite-deep);border:none;
+  padding:.85rem 1.6rem;cursor:pointer;font-weight:500;
+}
+.toggle-btn:hover{background:#d9ad7e}
+.toggle-btn:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.roof-state{font-family:'IBM Plex Mono';font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sky)}
+.spec-list{list-style:none;margin-top:1rem}
+.spec-list li{
+  display:grid;grid-template-columns:7.5rem 1fr;gap:1rem;
+  padding:.9rem 0;border-bottom:1px solid rgba(237,235,228,.14);
+  font-size:.92rem;
+}
+.spec-list .k{font-family:'IBM Plex Mono';font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--timber);padding-top:.2rem}
+.section-light .spec-list li{border-color:#cfcabb}
+.section-light .spec-list .k{color:var(--timber-dim)}
+.section-light .spec-list{color:#3b3e3a}
+
+/* ---------- CROSS SECTION ---------- */
+.xsec-frame{
+  border:1px solid #c7c2b3;background:#F4F2EB;
+  padding:clamp(1rem,3vw,2.5rem);position:relative;
+}
+.xsec-frame .corner{position:absolute;font-family:'IBM Plex Mono';font-size:.62rem;letter-spacing:.12em;color:#9a958a;text-transform:uppercase}
+#xsecSvg{width:100%;height:auto;display:block}
+.callouts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:1px;background:#c7c2b3;border:1px solid #c7c2b3;margin-top:2.5rem;
+}
+.callout{background:var(--chalk);padding:1.4rem 1.5rem}
+.callout .tag{
+  font-family:'Big Shoulders Display';font-weight:700;font-size:1.5rem;
+  color:var(--pitch);display:block;margin-bottom:.4rem;
+}
+.callout h3{font-size:.95rem;font-weight:600;margin-bottom:.35rem}
+.callout p{font-size:.85rem;color:#55584f}
+
+/* ---------- PITCH TRAY ---------- */
+.tray-wrap{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(2rem,5vw,5rem);align-items:center}
+#traySvg{width:100%;height:auto;display:block}
+.tray-stage{background:#1E2426;border:1px solid #333a3e;padding:clamp(1rem,3vw,2rem)}
+.tray-rail{fill:none;stroke:#4a555b;stroke-width:1;stroke-dasharray:5 5}
+.tray-grass{fill:var(--pitch)}
+@keyframes traySlide{0%,15%{transform:translateX(0)}50%,65%{transform:translateX(210px)}100%{transform:translateX(0)}}
+.tray-move{animation:traySlide 9s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.tray-move{animation:none}}
+
+/* ---------- SYSTEMS SCOREBOARD ---------- */
+.board{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1px;background:rgba(237,235,228,.18);border:1px solid rgba(237,235,228,.18);
+}
+.board>div{background:var(--graphite);padding:2rem 1.6rem}
+.board .num{
+  font-family:'Big Shoulders Display';font-weight:800;font-size:clamp(2.6rem,4.5vw,3.8rem);
+  line-height:1;color:var(--pitch-bright);
+}
+.board .unit{font-family:'Big Shoulders Display';font-weight:500;font-size:1.3rem;color:var(--pitch-bright);margin-left:.2rem}
+.board h3{font-size:.92rem;font-weight:600;margin:.8rem 0 .3rem;color:var(--chalk)}
+.board p{font-size:.82rem;color:#9fabb0}
+
+/* ---------- LEGACY ---------- */
+.legacy-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#c7c2b3;border:1px solid #c7c2b3}
+.legacy-card{background:var(--chalk);padding:clamp(1.5rem,3vw,2.8rem)}
+.legacy-card.tournament{background:#E7E3D6}
+.legacy-card .cap{font-family:'Big Shoulders Display';font-weight:800;font-size:clamp(3rem,6vw,5rem);line-height:1}
+.legacy-card.tournament .cap{color:var(--ink)}
+.legacy-card.legacy .cap{color:var(--pitch)}
+.legacy-card .phase{font-family:'IBM Plex Mono';font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--timber-dim);margin-bottom:1rem;display:block}
+.legacy-card p{font-size:.88rem;color:#4a4d49;margin-top:.8rem;max-width:26rem}
+
+/* ---------- FOOTER ---------- */
+footer{
+  background:var(--graphite-deep);color:#7e8b91;
+  padding:2.5rem clamp(1.25rem,5vw,4.5rem);
+  font-family:'IBM Plex Mono';font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+
+@media (max-width:820px){
+  .iris-wrap,.tray-wrap,.legacy-wrap{grid-template-columns:1fr}
+  .hero-stats>div{padding-right:1.2rem;margin-right:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-top">
+    <span class="mark">The Aperture</span>
+    <span>Concept Board · Rev A</span>
+  </div>
+
+  <svg class="hero-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0B0F11"/>
+        <stop offset="1" stop-color="#16211F"/>
+      </linearGradient>
+      <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F5F2E4" stop-opacity="0"/>
+        <stop offset="1" stop-color="#F5F2E4" stop-opacity=".5"/>
+      </linearGradient>
+      <radialGradient id="bowlGlow" cx="50%" cy="100%" r="75%">
+        <stop offset="0" stop-color="#E9E2B8" stop-opacity=".55"/>
+        <stop offset=".55" stop-color="#C89B6D" stop-opacity=".12"/>
+        <stop offset="1" stop-color="#C89B6D" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1440" height="900" fill="url(#skyGrad)"/>
+
+    <!-- floodlight beams -->
+    <g class="beam">
+      <polygon points="360,560 300,140 420,140" fill="url(#glowGrad)" transform="rotate(14 360 560)"/>
+      <polygon points="1080,560 1020,140 1140,140" fill="url(#glowGrad)" transform="rotate(-14 1080 560)"/>
+      <polygon points="720,540 640,100 800,100" fill="url(#glowGrad)"/>
+    </g>
+
+    <!-- interior glow rising from the bowl -->
+    <ellipse cx="720" cy="720" rx="640" ry="260" fill="url(#bowlGlow)"/>
+
+    <!-- roof petal silhouettes, partly open -->
+    <g stroke="#A8C4CE" stroke-opacity=".7" fill="rgba(168,196,206,.07)" stroke-width="1.4">
+      <path d="M300 610 Q 500 470 720 460 Q 940 470 1140 610 L 1050 640 Q 890 540 720 532 Q 550 540 390 640 Z"/>
+    </g>
+
+    <!-- timber lattice shell (diagrid elevation) -->
+    <g stroke="#C89B6D" stroke-width="1.6" fill="none" stroke-opacity=".9">
+      <path d="M240 640 Q 720 520 1200 640 L 1160 780 Q 720 700 280 780 Z" fill="#20262A" stroke-opacity="1"/>
+    </g>
+    <clipPath id="shellClip"><path d="M240 640 Q 720 520 1200 640 L 1160 780 Q 720 700 280 780 Z"/></clipPath>
+    <g clip-path="url(#shellClip)" stroke="#C89B6D" stroke-width="1.1" stroke-opacity=".55">
+      <path d="M200 820 L 460 540 M280 830 L 540 545 M360 840 L 620 548 M440 848 L 700 550 M520 852 L 780 552 M600 856 L 860 552 M680 858 L 940 555 M760 858 L 1020 560 M840 856 L 1100 566 M920 852 L 1180 575 M1000 846 L 1250 590"/>
+      <path d="M1240 820 L 980 540 M1160 830 L 900 545 M1080 840 L 820 548 M1000 848 L 740 550 M920 852 L 660 552 M840 856 L 580 552 M760 858 L 500 555 M680 858 L 420 560 M600 856 L 340 566 M520 852 L 260 575 M440 846 L 190 590"/>
+    </g>
+    <!-- lit gate openings -->
+    <g fill="#E9E2B8" fill-opacity=".85">
+      <rect x="430" y="712" width="26" height="40" rx="13"/>
+      <rect x="700" y="700" width="26" height="42" rx="13"/>
+      <rect x="960" y="712" width="26" height="40" rx="13"/>
+    </g>
+    <!-- ground line + crowd approach -->
+    <line x1="0" y1="800" x2="1440" y2="800" stroke="#3A423F" stroke-width="1"/>
+    <g fill="#5c6a70">
+      <circle cx="350" cy="812" r="3"/><circle cx="380" cy="818" r="3"/><circle cx="540" cy="815" r="3"/>
+      <circle cx="620" cy="820" r="3"/><circle cx="830" cy="814" r="3"/><circle cx="905" cy="819" r="3"/>
+      <circle cx="1060" cy="813" r="3"/><circle cx="1120" cy="818" r="3"/>
+    </g>
+  </svg>
+
+  <div class="hero-content">
+    <span class="plaque">International Stadium Concept</span>
+    <h1>The<br>Aperture</h1>
+    <p class="sub">A 65,000-seat bowl in engineered timber and recycled steel, crowned by an iris roof that opens to the sky in fifteen minutes. Built for tournaments. Sized, from day one, for the fifty years after.</p>
+    <div class="hero-stats">
+      <div><span class="num">65,000</span><div class="lbl">Tournament seats</div></div>
+      <div><span class="num">15 min</span><div class="lbl">Roof open→close</div></div>
+      <div><span class="num">7 m</span><div class="lbl">Front row to touchline</div></div>
+      <div><span class="num">−40%</span><div class="lbl">Embodied carbon vs. steel</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ IRIS ROOF ============ -->
+<section class="section-dark">
+  <div class="sec-head">
+    <span class="plaque">Gate N · Roof System</span>
+    <h2>The iris roof</h2>
+    <p>Twelve ETFE petals rotate on a steel compression ring, opening the pitch to sun and rain between fixtures and sealing the bowl on match day. Drive the mechanism below.</p>
+  </div>
+
+  <div class="iris-wrap">
+    <div class="iris-stage" id="irisStage">
+      <span class="corner tl">Plan · roof level</span>
+      <span class="corner br">Scale 1:2000</span>
+      <svg id="irisSvg" viewBox="0 0 600 600" role="img" aria-label="Plan diagram of twelve roof petals rotating open around a central oculus">
+        <!-- outer compression ring -->
+        <circle cx="300" cy="300" r="272" fill="none" stroke="#C89B6D" stroke-width="2.5"/>
+        <circle cx="300" cy="300" r="258" fill="none" stroke="#C89B6D" stroke-width="1" stroke-opacity=".5"/>
+        <!-- seating bowl reference -->
+        <circle cx="300" cy="300" r="150" fill="none" stroke="#41504f" stroke-width="1" stroke-dasharray="4 5"/>
+        <!-- pitch reference -->
+        <rect x="252" y="230" width="96" height="140" fill="none" stroke="#2E6B45" stroke-width="1.5"/>
+        <line x1="252" y1="300" x2="348" y2="300" stroke="#2E6B45" stroke-width="1"/>
+        <circle cx="300" cy="300" r="14" fill="none" stroke="#2E6B45" stroke-width="1"/>
+        <!-- petals -->
+        <g id="petals"></g>
+        <!-- central oculus ring -->
+        <circle cx="300" cy="300" r="34" fill="none" stroke="#EDEBE4" stroke-width="1.4" stroke-opacity=".8"/>
+      </svg>
+      <div class="roof-controls">
+        <button class="toggle-btn" id="roofBtn" aria-pressed="false">Open the roof</button>
+        <span class="roof-state" id="roofState" aria-live="polite">Status · Sealed for match day</span>
+      </div>
+    </div>
+
+    <ul class="spec-list">
+      <li><span class="k">Petals</span><span>12 ETFE-clad blades on a recycled-steel compression ring — each drives independently, so partial shade configurations are possible on hot days.</span></li>
+      <li><span class="k">Cycle</span><span>Full open or close in under 15 minutes; wind-rated to operate up to 60 km/h and lock down beyond it.</span></li>
+      <li><span class="k">Skin</span><span>Photovoltaic film laminated to the upper ETFE layer feeds on-site batteries covering roughly 70% of match-day demand.</span></li>
+      <li><span class="k">Acoustics</span><span>Closed configuration reflects crowd noise back into the bowl; open configuration vents concert sound ceilings for neighbouring districts.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ CROSS SECTION ============ -->
+<section class="section-light">
+  <div class="sec-head">
+    <span class="plaque">Gate E · Section</span>
+    <h2>One cut through the building</h2>
+    <p>Everything that makes the stadium work stacks in a single section: the timber diagrid, the steep bowl, the open concourse, and the rail station buried in the podium.</p>
+  </div>
+
+  <div class="xsec-frame">
+    <span class="corner tl">Section A–A · looking north</span>
+    <span class="corner br">Scale 1:1250</span>
+    <svg id="xsecSvg" viewBox="0 0 1200 560" role="img" aria-label="Cross-section drawing showing roof petals, timber lattice, three seating tiers, open concourse, pitch tray, and an underground rail station">
+      <defs>
+        <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#b9b3a2" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <!-- ground -->
+      <rect x="0" y="430" width="1200" height="130" fill="url(#hatch)"/>
+      <line x1="0" y1="430" x2="1200" y2="430" stroke="#2A2C2A" stroke-width="2"/>
+
+      <!-- rail station void -->
+      <rect x="430" y="452" width="340" height="76" fill="#F4F2EB" stroke="#2A2C2A" stroke-width="1.5"/>
+      <line x1="430" y1="506" x2="770" y2="506" stroke="#2A2C2A" stroke-width="1"/>
+      <rect x="470" y="490" width="70" height="16" fill="#A8C4CE"/>
+      <rect x="660" y="490" width="70" height="16" fill="#A8C4CE"/>
+      <text x="600" y="478" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#55584f">RAIL STATION · −12 m</text>
+      <text x="600" y="545" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#2A2C2A">4</text>
+
+      <!-- pitch on tray -->
+      <rect x="470" y="416" width="260" height="14" fill="#2E6B45"/>
+      <rect x="466" y="424" width="268" height="6" fill="#8a8474"/>
+      <text x="600" y="408" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#2E6B45">PITCH TRAY</text>
+      <text x="600" y="392" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#2A2C2A">3</text>
+
+      <!-- left bowl tiers -->
+      <g fill="#DAD6CA" stroke="#2A2C2A" stroke-width="1.5">
+        <polygon points="470,430 470,392 330,318 330,430"/>
+        <polygon points="330,352 330,300 240,236 240,352"/>
+        <polygon points="240,286 240,220 170,160 170,286"/>
+      </g>
+      <!-- right bowl tiers -->
+      <g fill="#DAD6CA" stroke="#2A2C2A" stroke-width="1.5">
+        <polygon points="730,430 730,392 870,318 870,430"/>
+        <polygon points="870,352 870,300 960,236 960,352"/>
+        <polygon points="960,286 960,220 1030,160 1030,286"/>
+      </g>
+      <!-- tier step lines -->
+      <g stroke="#9a958a" stroke-width="1">
+        <path d="M470 392 L330 318 M330 300 L240 236 M240 220 L170 160" fill="none"/>
+        <path d="M730 392 L870 318 M870 300 L960 236 M960 220 L1030 160" fill="none"/>
+      </g>
+
+      <!-- 360 concourse voids -->
+      <rect x="300" y="356" width="34" height="26" fill="#F4F2EB" stroke="#C89B6D" stroke-width="1.5"/>
+      <rect x="866" y="356" width="34" height="26" fill="#F4F2EB" stroke="#C89B6D" stroke-width="1.5"/>
+      <text x="317" y="348" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#2A2C2A">2</text>
+
+      <!-- timber diagrid shell, left & right -->
+      <g stroke="#C89B6D" stroke-width="2" fill="none">
+        <path d="M120 430 C 110 260, 190 120, 400 78"/>
+        <path d="M1080 430 C 1090 260, 1010 120, 800 78"/>
+      </g>
+      <g stroke="#C89B6D" stroke-width="1" stroke-opacity=".6" fill="none">
+        <path d="M140 430 L 180 300 M180 300 L 150 200 M180 300 L 250 180 M250 180 L 210 120 M250 180 L 340 105 M340 105 L 400 78"/>
+        <path d="M1060 430 L 1020 300 M1020 300 L 1050 200 M1020 300 L 950 180 M950 180 L 990 120 M950 180 L 860 105 M860 105 L 800 78"/>
+      </g>
+      <text x="128" y="250" font-family="IBM Plex Mono" font-size="11" fill="#2A2C2A">1</text>
+
+      <!-- roof petals (section) -->
+      <g stroke="#7d95a0" stroke-width="2" fill="rgba(168,196,206,.25)">
+        <path d="M400 78 Q 480 58 560 66 L 560 76 Q 480 68 400 88 Z"/>
+        <path d="M800 78 Q 720 58 640 66 L 640 76 Q 720 68 800 88 Z"/>
+      </g>
+      <line x1="560" y1="71" x2="640" y2="71" stroke="#7d95a0" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="600" y="52" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#55584f">OCULUS · PETALS RETRACTED</text>
+
+      <!-- dimension line -->
+      <g stroke="#9a958a" stroke-width="1">
+        <line x1="170" y1="130" x2="170" y2="100"/><line x1="1030" y1="130" x2="1030" y2="100"/>
+        <line x1="170" y1="108" x2="1030" y2="108"/>
+      </g>
+      <text x="600" y="100" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#55584f">≈ 245 m CLEAR SPAN</text>
+    </svg>
+  </div>
+
+  <div class="callouts">
+    <div class="callout"><span class="tag">1</span><h3>Timber–steel diagrid</h3><p>Glulam lattice on recycled-steel nodes carries the roof ring — cutting embodied carbon about 40% against an all-steel shell and giving the facade warmth at street level.</p></div>
+    <div class="callout"><span class="tag">2</span><h3>360° open concourse</h3><p>The mid-tier concourse stays visually open to the pitch, so no one loses sight of the game while ordering ahead to seat-adjacent pickup lockers.</p></div>
+    <div class="callout"><span class="tag">3</span><h3>Slide-out pitch tray</h3><p>Hybrid grass lives on a rolling tray with sub-surface heating, aeration, and moisture sensing feeding an AI groundskeeping model.</p></div>
+    <div class="callout"><span class="tag">4</span><h3>Rail under the podium</h3><p>An integrated rail/metro station sits directly beneath the entry podium — transit-first access with minimal parking and a 5,000-cycle bike hub.</p></div>
+  </div>
+</section>
+
+<!-- ============ PITCH TRAY ============ -->
+<section class="section-dark">
+  <div class="tray-wrap">
+    <div>
+      <span class="plaque">Gate S · Pitch Operations</span>
+      <h2 class="display" style="font-weight:700;text-transform:uppercase;font-size:clamp(2.2rem,4.5vw,3.4rem);line-height:.95;margin:.6rem 0 1rem">48 hours to a concert floor</h2>
+      <p style="color:#B9C4C9;max-width:34rem">The grass never suffers for the business plan. The full playing surface rolls out to a sunlit grow yard on rails, leaving a rigid event deck behind — the conversion that keeps an international venue solvent between fixtures.</p>
+      <ul class="spec-list">
+        <li><span class="k">Surface</span><span>Hybrid natural-synthetic turf, stitched for international-standard traction and recovery.</span></li>
+        <li><span class="k">Conversion</span><span>Pitch out, deck configured, and rigging up inside 48 hours — in either direction.</span></li>
+        <li><span class="k">Grow yard</span><span>Outside the bowl the tray sits under open sky with irrigation drawn from harvested rainwater.</span></li>
+      </ul>
+    </div>
+    <div class="tray-stage">
+      <svg id="traySvg" viewBox="0 0 640 340" role="img" aria-label="Plan diagram of the pitch tray sliding from the stadium bowl to an external grow yard">
+        <!-- bowl outline -->
+        <ellipse cx="200" cy="170" rx="180" ry="150" fill="none" stroke="#C89B6D" stroke-width="2"/>
+        <ellipse cx="200" cy="170" rx="130" ry="105" fill="none" stroke="#41504f" stroke-width="1" stroke-dasharray="4 5"/>
+        <!-- rails -->
+        <line class="tray-rail" x1="150" y1="112" x2="620" y2="112"/>
+        <line class="tray-rail" x1="150" y1="228" x2="620" y2="228"/>
+        <!-- grow yard -->
+        <rect x="410" y="96" width="200" height="148" fill="none" stroke="#41504f" stroke-width="1.4"/>
+        <text x="510" y="266" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#7e8b91">GROW YARD</text>
+        <text x="200" y="330" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#7e8b91">BOWL / EVENT DECK</text>
+        <!-- sliding tray -->
+        <g class="tray-move">
+          <rect class="tray-grass" x="130" y="118" width="140" height="104" rx="2"/>
+          <rect x="130" y="118" width="140" height="104" fill="none" stroke="#4BA46A" stroke-width="1.5" rx="2"/>
+          <line x1="200" y1="118" x2="200" y2="222" stroke="#EDEBE4" stroke-width="1" stroke-opacity=".7"/>
+          <circle cx="200" cy="170" r="14" fill="none" stroke="#EDEBE4" stroke-width="1" stroke-opacity=".7"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SYSTEMS ============ -->
+<section class="section-dark" style="padding-top:0">
+  <div class="sec-head">
+    <span class="plaque">Gate W · Building Systems</span>
+    <h2>Numbers on the board</h2>
+  </div>
+  <div class="board">
+    <div><span class="num">70</span><span class="unit">%</span><h3>Match-day energy on site</h3><p>Photovoltaic roof skin plus battery storage carry the bulk of event demand.</p></div>
+    <div><span class="num">25</span><span class="unit">min</span><h3>Full ingress</h3><p>600 encrypted QR/NFC gates — no facial recognition anywhere in the building.</p></div>
+    <div><span class="num">100</span><span class="unit">%</span><h3>Pitch water harvested</h3><p>Roof rainwater capture supplies irrigation and toilet flushing year-round.</p></div>
+    <div><span class="num">5,000</span><h3>Cycle parking spaces</h3><p>A bike hub at podium level anchors the transit-first access strategy.</p></div>
+    <div><span class="num">1</span><span class="unit">tier</span><h3>Safe standing</h3><p>A continuous rail-seat tier behind the south goal, built for atmosphere.</p></div>
+    <div><span class="num">48</span><span class="unit">hr</span><h3>Mode change</h3><p>Football to concert and back, without compromising the playing surface.</p></div>
+  </div>
+</section>
+
+<!-- ============ LEGACY ============ -->
+<section class="section-light">
+  <div class="sec-head">
+    <span class="plaque">Gate L · Legacy Plan</span>
+    <h2>Designed to shrink</h2>
+    <p>The most futuristic thing a tournament stadium can do is refuse to become a ruin. The upper tier is a bolted, demountable structure — its removal is part of the original engineering, not an afterthought.</p>
+  </div>
+  <div class="legacy-wrap">
+    <div class="legacy-card tournament">
+      <span class="phase">Phase 1 · Tournament mode</span>
+      <div class="cap">65,000</div>
+      <p>Full three-tier bowl for international fixtures, finals, and opening ceremonies. Upper tier carried on independent bolted steelwork.</p>
+    </div>
+    <div class="legacy-card legacy">
+      <span class="phase">Phase 2 · Legacy mode</span>
+      <div class="cap">45,000</div>
+      <p>Upper tier demounted and re-erected elsewhere as a mid-size venue. The roof ring, facade, and services are sized for the smaller bowl from day one.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>The Aperture · International Stadium Concept</span>
+  <span>Board Rev A · Sheet 1 of 1</span>
+</footer>
+
+<script>
+// Build 12 iris petals
+(function(){
+  const g = document.getElementById('petals');
+  const cx=300, cy=300, n=12;
+  for(let i=0;i<n;i++){
+    const a = (i/n)*Math.PI*2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    // petal: blade from inner oculus to outer ring
+    p.setAttribute('d','M 300 266 Q 340 170 316 52 L 284 52 Q 276 170 300 266 Z');
+    p.setAttribute('class','petal');
+    p.setAttribute('transform-origin','300px 266px');
+    const wrap = document.createElementNS('http://www.w3.org/2000/svg','g');
+    wrap.setAttribute('transform',`rotate(${(i/n)*360} ${cx} ${cy})`);
+    wrap.appendChild(p);
+    g.appendChild(wrap);
+  }
+})();
+
+// Roof toggle
+(function(){
+  const stage = document.getElementById('irisStage');
+  const btn = document.getElementById('roofBtn');
+  const state = document.getElementById('roofState');
+  let open = false;
+  btn.addEventListener('click', ()=>{
+    open = !open;
+    stage.classList.toggle('iris-open', open);
+    btn.setAttribute('aria-pressed', String(open));
+    btn.textContent = open ? 'Close the roof' : 'Open the roof';
+    state.textContent = open ? 'Status · Open to sky — pitch in daylight' : 'Status · Sealed for match day';
+  });
+})();
+</script>
+</body>
+</html>
