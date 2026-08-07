@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Envelope — email header forensics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F1F6;
+  --paper-2:#E9E5F0;
+  --paper-3:#DFD9EA;
+  --ink:#1B1626;
+  --ink-soft:#4B4459;
+  --ink-faint:#7A7189;
+  --mimeo:#4A32A8;
+  --mimeo-soft:#7B62D9;
+  --mimeo-wash:#EDE8FA;
+  --pass:#1F6B4A;
+  --fail:#A32232;
+  --warn:#9A6206;
+  --rule:#C8C0D8;
+  --rule-hard:#A79CBF;
+  --shadow:0 1px 0 var(--rule), 0 2px 14px rgba(27,22,38,.06);
+  --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --slab:'Zilla Slab',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(var(--paper-2) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 90px}
+
+/* ---------- masthead ---------- */
+header.mast{padding:52px 0 30px;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--mimeo);
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+h1{
+  font-family:var(--slab);font-weight:700;font-size:clamp(44px,9vw,76px);
+  line-height:.92;letter-spacing:-.02em;margin:0 0 14px;
+}
+h1 span{color:var(--mimeo-soft)}
+.lede{max-width:58ch;color:var(--ink-soft);font-size:16px;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+
+/* ---------- input ---------- */
+section{margin-top:42px}
+.sec-label{
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px;
+  display:flex;align-items:baseline;gap:10px;
+}
+.sec-label::after{content:"";flex:1;height:1px;background:var(--rule);transform:translateY(-3px)}
+textarea{
+  width:100%;min-height:210px;resize:vertical;
+  font-family:var(--mono);font-size:12.5px;line-height:1.65;
+  color:var(--ink);background:#fff;
+  border:1px solid var(--rule-hard);border-radius:2px;
+  padding:16px;box-shadow:var(--shadow);
+}
+textarea:focus{outline:2px solid var(--mimeo);outline-offset:1px;border-color:var(--mimeo)}
+textarea::placeholder{color:#A79CBF}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+button{
+  font-family:var(--sans);font-size:14px;font-weight:500;
+  padding:10px 18px;border-radius:2px;cursor:pointer;
+  border:1px solid var(--ink);background:#fff;color:var(--ink);
+  transition:background .12s,color .12s,transform .12s;
+}
+button:hover{background:var(--paper-2)}
+button:focus-visible{outline:2px solid var(--mimeo);outline-offset:2px}
+button.primary{background:var(--mimeo);border-color:var(--mimeo);color:#fff}
+button.primary:hover{background:#3B2790}
+button.ghost{border-color:var(--rule-hard);color:var(--ink-soft)}
+button.small{font-size:12px;padding:6px 12px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.spacer{flex:1}
+
+/* ---------- verdict ---------- */
+.verdict{
+  border:2px solid var(--ink);background:#fff;border-radius:2px;
+  padding:24px;box-shadow:var(--shadow);
+}
+.verdict-top{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.risk{
+  font-family:var(--slab);font-weight:700;font-size:38px;line-height:1;
+  letter-spacing:-.01em;white-space:nowrap;
+}
+.risk small{display:block;font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.risk.low{color:var(--pass)} .risk.moderate{color:var(--warn)} .risk.high{color:var(--fail)}
+.verdict-summary{flex:1;min-width:240px;color:var(--ink-soft);font-size:15px}
+.findings{list-style:none;padding:0;margin:20px 0 0;border-top:1px solid var(--rule)}
+.findings li{
+  display:flex;gap:12px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--paper-2);font-size:14px;
+}
+.sev{
+  font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;padding:3px 7px;border-radius:2px;white-space:nowrap;
+  border:1px solid currentColor;
+}
+.sev.high{color:var(--fail)} .sev.medium{color:var(--warn)}
+.sev.low,.sev.info{color:var(--ink-faint)}
+
+/* ---------- stamps ---------- */
+.stamps{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.stamp{
+  font-family:var(--mono);text-align:center;padding:9px 16px;
+  border:2.5px double currentColor;border-radius:3px;
+  transform:rotate(-3.5deg);opacity:.88;
+}
+.stamp:nth-child(2){transform:rotate(2deg)}
+.stamp:nth-child(3){transform:rotate(-1.5deg)}
+.stamp .k{font-size:9.5px;font-weight:500;letter-spacing:.24em;display:block;opacity:.75}
+.stamp .v{font-size:17px;font-weight:600;letter-spacing:.1em}
+.stamp.pass{color:var(--pass)} .stamp.fail{color:var(--fail)}
+.stamp.warn{color:var(--warn)} .stamp.none{color:var(--ink-faint);border-style:dashed;border-width:1.5px}
+
+/* ---------- origin ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#fff;border:1px solid var(--rule-hard);border-radius:2px;padding:20px;box-shadow:var(--shadow)}
+.card h3{
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0 0 14px;
+}
+.ipbig{font-family:var(--mono);font-size:clamp(20px,4.2vw,30px);font-weight:600;
+  word-break:break-all;line-height:1.2;color:var(--mimeo)}
+.ipnone{font-family:var(--slab);font-size:20px;color:var(--ink-soft);line-height:1.3}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin-top:14px;font-size:13.5px}
+.kv dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);padding-top:3px}
+.kv dd{margin:0;font-family:var(--mono);font-size:13px;word-break:break-word}
+.note{margin-top:14px;padding:12px 14px;background:var(--mimeo-wash);
+  border-left:3px solid var(--mimeo-soft);font-size:13.5px;color:var(--ink-soft)}
+.note.warnbox{background:#FBF2E4;border-left-color:var(--warn)}
+
+/* ---------- the descent ---------- */
+.hop{
+  background:#fff;border:1px solid var(--rule-hard);border-radius:2px;
+  padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow);position:relative;
+}
+.hop.claimed{
+  border-style:dashed;border-color:var(--rule-hard);background:
+    repeating-linear-gradient(135deg,rgba(122,113,137,.055) 0 6px,transparent 6px 13px),#fff;
+}
+.hop-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.hopno{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:#fff;background:var(--ink);padding:3px 8px;border-radius:2px}
+.hop.claimed .hopno{background:var(--ink-faint)}
+.hop-title{font-family:var(--mono);font-size:14px;font-weight:600;word-break:break-all;flex:1;min-width:180px}
+.hop-time{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);white-space:nowrap}
+.tag{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;padding:3px 7px;border:1px solid currentColor;border-radius:2px}
+.tag.prov{color:var(--mimeo)} .tag.dc{color:var(--warn)} .tag.res{color:var(--pass)}
+.tag.priv{color:var(--ink-faint)} .tag.gap{color:var(--fail)}
+.hop-body{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px}
+.hop-body dt{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);padding-top:2px}
+.hop-body dd{margin:0;font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.hop-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--paper-2);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft)}
+.delay{font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+  text-align:center;padding:5px 0 13px;letter-spacing:.05em}
+.delay b{color:var(--warn);font-weight:600}
+
+/* ---------- SIGNATURE: the trust boundary seam ---------- */
+.seam{margin:26px 0 24px;position:relative}
+.seam-rule{
+  height:0;border-top:2px dashed var(--ink);
+  position:relative;
+}
+.seam-rule::before,.seam-rule::after{
+  content:"";position:absolute;top:-5px;width:9px;height:9px;
+  border-radius:50%;background:var(--paper);border:2px solid var(--ink);
+}
+.seam-rule::before{left:-4px} .seam-rule::after{right:-4px}
+.seam-label{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-1.2deg);
+  background:var(--paper);padding:9px 20px;border:2px solid var(--ink);border-radius:2px;
+  font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;text-align:center;white-space:nowrap;color:var(--ink);
+}
+.seam-sub{
+  text-align:center;margin-top:30px;font-size:13.5px;color:var(--ink-soft);
+  max-width:56ch;margin-left:auto;margin-right:auto;
+}
+
+/* ---------- raw headers ---------- */
+details.raw{border:1px solid var(--rule-hard);background:#fff;border-radius:2px;box-shadow:var(--shadow)}
+details.raw summary{
+  cursor:pointer;padding:14px 18px;font-family:var(--mono);font-size:11px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
+}
+details.raw summary:focus-visible{outline:2px solid var(--mimeo);outline-offset:-2px}
+.rawtable{border-top:1px solid var(--rule);max-height:440px;overflow:auto}
+.rawrow{display:grid;grid-template-columns:190px 1fr;gap:14px;padding:9px 18px;
+  border-bottom:1px solid var(--paper-2);font-family:var(--mono);font-size:12px}
+.rawrow dt{color:var(--mimeo);font-weight:500;word-break:break-word}
+.rawrow dd{margin:0;white-space:pre-wrap;word-break:break-word;color:var(--ink-soft)}
+
+.assessment{white-space:pre-wrap;font-size:14.5px;line-height:1.6;color:var(--ink-soft)}
+.msg{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);padding:8px 0}
+.msg.err{color:var(--fail)}
+.hidden{display:none !important}
+
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--ink-faint);max-width:64ch}
+
+@media (max-width:720px){
+  .wrap{padding:0 16px 70px}
+  .grid2{grid-template-columns:1fr}
+  .hop-body,.kv{grid-template-columns:1fr;gap:2px}
+  .hop-body dt,.kv dt{margin-top:8px}
+  .rawrow{grid-template-columns:1fr;gap:2px}
+  .seam-label{font-size:9px;letter-spacing:.12em;padding:7px 12px;white-space:normal;width:88%}
+}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.anim{animation:rise .34s cubic-bezier(.22,.8,.3,1) both}
+@media (prefers-reduced-motion:reduce){.anim{animation:none}*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">Email header forensics · runs locally</div>
+  <h1>Envelope<span>.</span></h1>
+  <p class="lede">Paste the raw headers of a message. Envelope reads the <b>Received</b> chain from the top down, finds where provable custody ends, and tells you which claims below that line you have no reason to believe.</p>
+</header>
+
+<section>
+  <div class="sec-label">Raw headers</div>
+  <textarea id="input" spellcheck="false" placeholder="Paste everything from the top of the message down to the first blank line.
+
+In Gmail: open the message → ⋮ → Show original → Copy to clipboard.
+In Outlook: open the message → File → Properties → Internet headers.
+In Apple Mail: View → Message → All Headers."></textarea>
+  <div class="controls">
+    <button class="primary" id="run">Analyze headers</button>
+    <button class="ghost" id="sample1">Load clean sample</button>
+    <button class="ghost" id="sample2">Load spoofed sample</button>
+    <div class="spacer"></div>
+    <button class="ghost" id="clear">Clear</button>
+  </div>
+  <div class="msg err hidden" id="inputErr"></div>
+</section>
+
+<div id="results" class="hidden">
+
+  <section>
+    <div class="sec-label">Verdict</div>
+    <div class="verdict">
+      <div class="verdict-top">
+        <div class="risk" id="riskWord"><small>Spoofing risk</small>—</div>
+        <div class="verdict-summary" id="riskSummary"></div>
+      </div>
+      <div class="stamps" id="stamps"></div>
+      <ul class="findings" id="findings"></ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Claimed origin</div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Earliest routable address</h3>
+        <div id="originIp" class="ipbig"></div>
+        <dl class="kv" id="originKv"></dl>
+        <div class="controls" style="margin-top:16px">
+          <button class="small ghost" id="geoBtn">Look up location</button>
+        </div>
+        <div class="msg hidden" id="geoMsg"></div>
+        <dl class="kv hidden" id="geoKv"></dl>
+      </div>
+      <div class="card">
+        <h3>Sender identity</h3>
+        <dl class="kv" id="identityKv"></dl>
+        <div id="identityNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">The descent · newest hop first</div>
+    <div id="chain"></div>
+  </section>
+
+  <section>
+    <div class="sec-label">Plain-language assessment</div>
+    <div class="card">
+      <div class="controls" style="margin-top:0">
+        <button class="ghost small" id="aiBtn">Write assessment</button>
+        <button class="ghost small" id="copyBtn">Copy text report</button>
+      </div>
+      <div class="msg hidden" id="aiMsg"></div>
+      <div class="assessment hidden" id="aiOut"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Every header, in order</div>
+    <details class="raw">
+      <summary>Show all parsed headers</summary>
+      <div class="rawtable"><dl id="rawList" style="margin:0"></dl></div>
+    </details>
+  </section>
+</div>
+
+<footer>
+  Envelope parses entirely in your browser; nothing leaves the page unless you press <b>Look up location</b> or <b>Write assessment</b>. Geolocation is reliable at country level and unreliable at city level, and means nothing at all for datacenter, VPN, or mobile carrier addresses — treat the address class as the finding, not the map pin.
+</footer>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. HEADER UNFOLDING (RFC 5322 §2.2.3)
+   Continuation lines begin with space or tab and belong to the
+   header above them. Stop at the first blank line — that's the body.
+   ============================================================ */
+function unfoldHeaders(raw){
+  const lines = raw.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
+  const out = [];
+  let cur = null, started = false;
+  for (const line of lines){
+    if (!line.trim()){
+      if (started) break;      // end of header block
+      continue;                 // tolerate leading blank lines
+    }
+    if (/^[ \t]/.test(line) && cur){
+      cur.value += " " + line.trim();
+      continue;
+    }
+    const m = /^([!-9;-~]+)[ \t]*:(.*)$/.exec(line);
+    if (m){
+      started = true;
+      cur = { name: m[1].toLowerCase(), rawName: m[1], value: m[2].trim() };
+      out.push(cur);
+    } else if (cur){
+      cur.value += " " + line.trim();   // salvage mangled paste
+    }
+  }
+  return out;
+}
+const getAll = (hs,n) => hs.filter(h=>h.name===n).map(h=>h.value);
+const getOne = (hs,n) => { const v = getAll(hs,n); return v.length ? v[0] : null; };
+
+/* ============================================================
+   2. ADDRESS EXTRACTION AND CLASSIFICATION
+   ============================================================ */
+function validV4(s){
+  const p = s.split(".");
+  return p.length===4 && p.every(o=>/^\d{1,3}$/.test(o) && +o<=255 && (o==="0"||!/^0/.test(o)||o.length===1));
+}
+function extractIPs(str){
+  if (!str) return [];
+  const found = [];
+  // IPv4-mapped IPv6 first, so ::ffff:1.2.3.4 resolves to the v4
+  const mapped = /::ffff:(\d{1,3}(?:\.\d{1,3}){3})/gi;
+  let m;
+  while ((m = mapped.exec(str))) if (validV4(m[1])) found.push(m[1]);
+  const v4 = /\b(\d{1,3}(?:\.\d{1,3}){3})\b/g;
+  while ((m = v4.exec(str))) if (validV4(m[1]) && !found.includes(m[1])) found.push(m[1]);
+  // IPv6: require "::" or at least 4 colon groups, so clock times never match
+  const v6 = /(?:IPv6:)?\b((?:[0-9a-f]{1,4})?(?::(?:[0-9a-f]{1,4})?){2,7})\b/gi;
+  while ((m = v6.exec(str))){
+    const c = m[1];
+    const groups = c.split(":").length;
+    if (!c.includes("::") && groups < 5) continue;
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(c)) continue;
+    if (!/[0-9a-f]/i.test(c.replace(/:/g,""))) continue;
+    if (!found.includes(c)) found.push(c);
+  }
+  return found;
+}
+function classifyIP(ip){
+  if (ip.includes(":")){
+    const l = ip.toLowerCase();
+    if (l === "::1") return { scope:"loopback", routable:false, label:"Loopback" };
+    if (/^fe[89ab]/.test(l)) return { scope:"link-local", routable:false, label:"Link-local" };
+    if (/^f[cd]/.test(l)) return { scope:"unique-local", routable:false, label:"Unique local (private)" };
+    if (/^2001:0?db8:/.test(l)) return { scope:"documentation", routable:true, label:"Documentation range (RFC 3849)" };
+    return { scope:"public", routable:true, label:"Globally routable IPv6" };
+  }
+  const o = ip.split(".").map(Number);
+  const D = (a,b,c,d)=>`${a}.${b}.${c}.${d}`;
+  if (o[0]===0)   return { scope:"reserved", routable:false, label:"Unspecified" };
+  if (o[0]===127) return { scope:"loopback", routable:false, label:"Loopback" };
+  if (o[0]===10 || (o[0]===172 && o[1]>=16 && o[1]<=31) || (o[0]===192 && o[1]===168))
+    return { scope:"private", routable:false, label:"Private (RFC 1918)" };
+  if (o[0]===100 && o[1]>=64 && o[1]<=127)
+    return { scope:"cgnat", routable:false, label:"Carrier-grade NAT (RFC 6598)" };
+  if (o[0]===169 && o[1]===254) return { scope:"link-local", routable:false, label:"Link-local" };
+  if ((o[0]===192&&o[1]===0&&o[2]===2)||(o[0]===198&&o[1]===51&&o[2]===100)||(o[0]===203&&o[1]===0&&o[2]===113))
+    return { scope:"documentation", routable:true, label:"Documentation range (RFC 5737)" };
+  if (o[0]===198 && (o[1]===18||o[1]===19))
+    return { scope:"benchmark", routable:true, label:"Benchmark range (RFC 2544)" };
+  if (o[0]>=224 && o[0]<=239) return { scope:"multicast", routable:false, label:"Multicast" };
+  if (o[0]>=240) return { scope:"reserved", routable:false, label:"Reserved" };
+  return { scope:"public", routable:true, label:"Globally routable" };
+}
+
+/* Offline network-type inference from the hostname alone.
+   No lookup needed, and often more useful than a map pin. */
+const DC_HINTS  = ["amazonaws","googleusercontent","googlehosted","azure","cloudapp","digitalocean",
+                   "linode","vultr","hetzner","ovh.net","ovh.ca","contabo","hostwinds","scaleway",
+                   "leaseweb","rackspace","serverhub","cloudflare","fastly","colo","vps","dedi"];
+const RES_HINTS = ["comcast","xfinity","verizon","frontier","sbcglobal","bellsouth","att.net","cox.net",
+                   "charter","spectrum","rr.com","optonline","dsl","cable","pppoe","broadband",
+                   "dyn.","dynamic","res.","client.","cust."];
+const MOB_HINTS = ["mobile","tmodns","myvzw","cellco","wireless","3g.","lte.","gprs"];
+function inferNetworkType(host){
+  if (!host) return null;
+  const h = host.toLowerCase();
+  if (MOB_HINTS.some(k=>h.includes(k))) return { type:"mobile", cls:"dc",
+    note:"Mobile carrier address. Shared by many subscribers and reassigned constantly — it does not identify a person or a place." };
+  if (DC_HINTS.some(k=>h.includes(k))) return { type:"datacenter", cls:"dc",
+    note:"Datacenter or hosting address. This is rented infrastructure, so the location tells you where a server sits, not where anyone was." };
+  if (RES_HINTS.some(k=>h.includes(k))) return { type:"residential", cls:"res",
+    note:"Consumer ISP address. The most meaningful kind of origin to find, though often dynamic and reassigned." };
+  return null;
+}
+
+/* Provider infrastructure. Several of these strip the submitting client IP. */
+const PROVIDERS = [
+  { m:["google.com","googlemail.com","gmail.com","googleusercontent.com"], name:"Google", strips:true },
+  { m:["outlook.com","protection.outlook.com","hotmail.com","office365.com","microsoft.com","exchangelabs.com"], name:"Microsoft", strips:true },
+  { m:["yahoo.com","yahoodns.net","yahooinc.com"], name:"Yahoo", strips:true },
+  { m:["icloud.com","apple.com","me.com","mail.me.com"], name:"Apple", strips:true },
+  { m:["proton.me","protonmail.ch"], name:"Proton", strips:true },
+  { m:["zoho.com","zohomail.com"], name:"Zoho", strips:true },
+  { m:["amazonses.com"], name:"Amazon SES", strips:false },
+  { m:["sendgrid.net"], name:"SendGrid", strips:false },
+  { m:["mailgun.org","mailgun.net"], name:"Mailgun", strips:false },
+  { m:["mcsv.net","mandrillapp.com","rsgsv.net"], name:"Mailchimp", strips:false },
+  { m:["sparkpostmail.com"], name:"SparkPost", strips:false },
+  { m:["postmarkapp.com"], name:"Postmark", strips:false },
+  { m:["mimecast.com"], name:"Mimecast", strips:false },
+  { m:["pphosted.com","proofpoint.com"], name:"Proofpoint", strips:false },
+  { m:["barracudanetworks.com"], name:"Barracuda", strips:false },
+  { m:["messagelabs.com"], name:"Broadcom/MessageLabs", strips:false },
+  { m:["mailchannels.net"], name:"MailChannels", strips:false },
+  { m:["sendinblue.com","brevo.com"], name:"Brevo", strips:false },
+  { m:["constantcontact.com","ctctcdn.com"], name:"Constant Contact", strips:false },
+  { m:["salesforce.com","exacttarget.com","mail.salesforce.com"], name:"Salesforce", strips:false }
+];
+function detectProvider(host){
+  if (!host) return null;
+  const h = host.toLowerCase().replace(/\.$/,"");
+  for (const p of PROVIDERS) if (p.m.some(s=>h===s || h.endsWith("."+s))) return p;
+  return null;
+}
+
+/* ============================================================
+   3. RECEIVED HEADER PARSING
+   The bracketed IP inside the from-clause is the TCP peer the
+   receiving MTA actually observed. The bare hostname beside it is
+   the HELO string, which the sender chooses and can lie about.
+   ============================================================ */
+function parseReceived(value, index){
+  let main = value, dateStr = "", date = null;
+  // Date follows the final semicolon; walk semicolons right-to-left until one parses.
+  const parts = value.split(";");
+  for (let i = parts.length - 1; i > 0; i--){
+    const cand = parts.slice(i).join(";").trim();
+    const d = new Date(cand.replace(/\s*\([A-Z]{2,5}\)\s*$/,""));
+    if (!isNaN(d.getTime()) && cand.length > 8){
+      dateStr = cand; date = d; main = parts.slice(0,i).join(";");
+      break;
+    }
+  }
+  const clause = (kw) => {
+    const re = new RegExp("(?:^|\\s)"+kw+"\\s+([^\\s(;]+)\\s*(\\([^()]*(?:\\([^()]*\\)[^()]*)*\\))?","i");
+    const m = re.exec(main);
+    return m ? { host:m[1].replace(/^\[|\]$/g,"").replace(/\.$/,""), paren:m[2]||"", raw:m[0].trim() } : null;
+  };
+  const from = clause("from"), by = clause("by");
+  const withM = /(?:^|\s)with\s+([A-Za-z0-9._+-]+)/i.exec(main);
+  const idM   = /(?:^|\s)id\s+([^\s;()]+)/i.exec(main);
+  const forM  = /(?:^|\s)for\s+<?([^\s;<>()]+@[^\s;<>()]+)>?/i.exec(main);
+
+  // Observed peer address: prefer the from-clause parenthetical, then a bare
+  // from-literal, and never fall back to the by-clause (that's the receiver).
+  let observed = null;
+  if (from){
+    const cands = extractIPs(from.paren).concat(extractIPs(from.host));
+    if (cands.length) observed = cands[cands.length-1];
+  }
+  return {
+    index,
+    raw: value,
+    fromHost: from ? from.host : null,
+    fromParen: from ? from.paren.replace(/^\(|\)$/g,"") : "",
+    byHost: by ? by.host : null,
+    byIPs: by ? extractIPs(by.paren).concat(extractIPs(by.host)) : [],
+    proto: withM ? withM[1] : null,
+    queueId: idM ? idM[1] : null,
+    forAddr: forM ? forM[1] : null,
+    dateStr, date,
+    observedIP: observed,
+    ipInfo: observed ? classifyIP(observed) : null,
+    internal: !from        // "Received: by ..." with no from = handoff inside one system
+  };
+}
+
+/* ============================================================
+   4. CHAIN CONTINUITY AND THE TRUST BOUNDARY
+   hops[0] was written last, by the server closest to you. Walk down.
+   Each hop's from-host should be the next hop's by-host. The first
+   place that fails is where verifiable custody ends.
+   ============================================================ */
+const normHost = h => (h||"").toLowerCase().replace(/\.$/,"").replace(/^\[|\]$/g,"");
+function regDomain(h){
+  const p = normHost(h).split(".");
+  if (p.length < 2) return normHost(h);
+  const two = ["co.uk","org.uk","ac.uk","com.au","net.au","co.jp","co.nz","com.br","co.za","com.mx","co.in"];
+  const last2 = p.slice(-2).join(".");
+  return (two.includes(last2) && p.length>=3) ? p.slice(-3).join(".") : last2;
+}
+function hostsRelated(a,b){
+  a = normHost(a); b = normHost(b);
+  if (!a || !b) return true;
+  if (a === b) return true;
+  if (a.endsWith("."+b) || b.endsWith("."+a)) return true;
+  const ra = regDomain(a), rb = regDomain(b);
+  return !!ra && ra === rb;
+}
+function analyzeChain(hops){
+  let boundary = hops.length - 1;   // index of the last hop still inside verified custody
+  const breaks = [];
+  for (let i = 0; i < hops.length - 1; i++){
+    const later = hops[i], earlier = hops[i+1];
+    if (later.internal) continue;   // internal handoff, nothing to corroborate
+    const byIPs = earlier.byIPs || [];
+    const ok = hostsRelated(later.fromHost, earlier.byHost) ||
+               (later.observedIP && byIPs.includes(later.observedIP));
+    if (!ok){
+      breaks.push({ at:i, claimed:later.fromHost, actual:earlier.byHost });
+      if (boundary === hops.length - 1) boundary = i;
+    }
+  }
+  // Clock sanity, oldest to newest
+  const chrono = hops.slice().reverse().filter(h=>h.date);
+  let outOfOrder = 0;
+  for (let i = 1; i < chrono.length; i++){
+    if (chrono[i].date.getTime() - chrono[i-1].date.getTime() < -60000) outOfOrder++;
+  }
+  return { boundary, breaks, outOfOrder };
+}
+
+/* ============================================================
+   5. AUTHENTICATION RESULTS
+   ============================================================ */
+function parseAuth(headers){
+  const blob = getAll(headers,"authentication-results")
+    .concat(getAll(headers,"arc-authentication-results"))
+    .join(" ; ");
+  const spfHdr = getOne(headers,"received-spf");
+  const grab = k => {
+    const m = new RegExp(k+"\\s*=\\s*([a-z]+)","i").exec(blob);
+    return m ? m[1].toLowerCase() : null;
+  };
+  let spf = grab("spf");
+  if (!spf && spfHdr){
+    const m = /^\s*([a-z]+)/i.exec(spfHdr);
+    if (m) spf = m[1].toLowerCase();
+  }
+  const clientIP = /client-ip\s*=\s*([0-9a-f.:]+)/i.exec((spfHdr||"") + " " + blob);
+  return {
+    spf, dkim: grab("dkim"), dmarc: grab("dmarc"),
+    present: !!blob || !!spfHdr,
+    clientIP: clientIP ? clientIP[1] : null
+  };
+}
+const domainOf = s => { const m = /@([A-Za-z0-9.-]+)/.exec(s||""); return m ? m[1].toLowerCase().replace(/[>.,;]+$/,"") : null; };
+
+/* ============================================================
+   6. VERDICT
+   ============================================================ */
+function buildVerdict(ctx){
+  const f = [];
+  const { auth, chain, hops, fromDom, returnDom, midDom, replyDom } = ctx;
+
+  if (auth.spf === "fail")      f.push({s:"high",   t:"SPF failed. The sending server is not authorized to send for the envelope domain — the classic signature of a forged sender."});
+  else if (auth.spf === "softfail") f.push({s:"medium", t:"SPF soft-failed. The domain owner lists this server as probably unauthorized but stopped short of a hard rejection."});
+  else if (auth.spf === "none") f.push({s:"low",    t:"No SPF record published for the envelope domain, so nothing here confirms or denies the sending server."});
+  else if (auth.spf === "pass") f.push({s:"info",   t:"SPF passed. The sending server is authorized for the envelope domain — though the envelope domain need not match the From address you see."});
+
+  if (auth.dkim === "fail")      f.push({s:"high", t:"DKIM signature failed to verify. The message was altered in transit or signed by a key that does not belong to the claimed domain."});
+  else if (auth.dkim === "none") f.push({s:"low",  t:"Message is unsigned, so its content cannot be tied cryptographically to any domain."});
+
+  if (auth.dmarc === "fail") f.push({s:"high", t:"DMARC failed. The visible From domain does not line up with an authenticated identity, which is exactly what DMARC exists to catch."});
+  if (!auth.present)         f.push({s:"low",  t:"No authentication results present. Either your provider does not record them or these headers were trimmed before you copied them."});
+
+  if (chain.outOfOrder)  f.push({s:"high", t:`Timestamps run backwards across ${chain.outOfOrder} hop${chain.outOfOrder>1?"s":""}. Mail cannot arrive before it was sent, so at least one Received header was fabricated.`});
+  if (chain.breaks.length){
+    const b = chain.breaks[0];
+    f.push({s:"medium", t:`Custody chain breaks below hop ${b.at+1}: it says it received from ${b.claimed||"an unnamed host"}, but the hop beneath it was handled by ${b.actual||"an unnamed host"}. The two do not connect.`});
+  }
+  if (fromDom && returnDom && fromDom !== returnDom)
+    f.push({s: (auth.spf==="fail"||auth.dmarc==="fail") ? "medium" : "low",
+            t:`Return-Path domain (${returnDom}) differs from the From domain (${fromDom}). Normal for mailing lists and bulk senders, suspicious on a message claiming to be personal or transactional.`});
+  if (replyDom && fromDom && replyDom !== fromDom)
+    f.push({s:"medium", t:`Replies are directed to ${replyDom} rather than ${fromDom}. Redirecting the reply path is a standard move in impersonation.`});
+  if (midDom && fromDom && midDom !== fromDom && regDomain(midDom) !== regDomain(fromDom))
+    f.push({s:"low", t:`Message-ID was minted under ${midDom}, not ${fromDom}. Often harmless relay behaviour, occasionally a sign the message was composed elsewhere.`});
+
+  const belowBoundary = hops.length - 1 - chain.boundary;
+  if (belowBoundary > 0)
+    f.push({s:"info", t:`${belowBoundary} hop${belowBoundary>1?"s":""} sit below the trust boundary. Anything they assert — including the origin address — is the sender's word, not evidence.`});
+
+  const highs = f.filter(x=>x.s==="high").length;
+  const meds  = f.filter(x=>x.s==="medium").length;
+  let risk = "low", summary;
+  if (highs) risk = "high";
+  else if (meds >= 1) risk = "moderate";
+
+  if (risk === "high")
+    summary = "Authentication or chain integrity failed outright. Treat the sender as unverified and the stated origin as unreliable until something independent corroborates it.";
+  else if (risk === "moderate")
+    summary = "Nothing fails outright, but there are inconsistencies worth resolving before you act on this message or cite its origin.";
+  else
+    summary = "Authentication holds and the custody chain is internally consistent. Note that a well-built forgery can also be internally consistent — consistency is the absence of contradiction, not proof.";
+
+  return { risk, summary, findings:f };
+}
+
+/* ============================================================
+   7. RENDER
+   ============================================================ */
+let STATE = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+function fmtDelay(ms){
+  const s = Math.round(ms/1000);
+  if (s < 0) return `${Math.abs(s)}s earlier — out of order`;
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`;
+  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+}
+
+function analyze(){
+  const raw = $("input").value;
+  const err = $("inputErr");
+  if (!raw.trim()){
+    err.textContent = "Nothing to analyze. Paste the header block, or load a sample.";
+    err.classList.remove("hidden"); return;
+  }
+  const headers = unfoldHeaders(raw);
+  const recv = getAll(headers,"received");
+  if (!headers.length){
+    err.textContent = "No headers found. Each line should look like Name: value — check that the paste kept its line breaks.";
+    err.classList.remove("hidden"); return;
+  }
+  if (!recv.length){
+    err.textContent = "Headers parsed, but there is no Received line. Without the relay chain there is no route to trace — most likely you copied a summary view rather than the original source.";
+    err.classList.remove("hidden"); return;
+  }
+  err.classList.add("hidden");
+
+  const hops = recv.map((v,i)=>parseReceived(v,i));
+  const chain = analyzeChain(hops);
+  const auth = parseAuth(headers);
+  const fromRaw = getOne(headers,"from");
+  const ctx = {
+    headers, hops, chain, auth,
+    fromDom: domainOf(fromRaw),
+    returnDom: domainOf(getOne(headers,"return-path")),
+    replyDom: domainOf(getOne(headers,"reply-to")),
+    midDom: domainOf(getOne(headers,"message-id"))
+  };
+  const verdict = buildVerdict(ctx);
+
+  // Origin: the earliest hop carrying a routable observed address.
+  let origin = null;
+  for (let i = hops.length - 1; i >= 0; i--){
+    if (hops[i].observedIP && hops[i].ipInfo.routable){ origin = hops[i]; break; }
+  }
+  const xorig = getOne(headers,"x-originating-ip") || getOne(headers,"x-sender-ip") || getOne(headers,"x-source-ip");
+  const xorigIP = xorig ? (extractIPs(xorig)[0] || null) : null;
+
+  STATE = { ...ctx, verdict, origin, xorigIP, raw };
+  render();
+  $("results").classList.remove("hidden");
+  $("results").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start" });
+}
+
+function render(){
+  const { hops, chain, auth, verdict, origin, xorigIP, headers } = STATE;
+
+  $("riskWord").className = "risk " + verdict.risk;
+  $("riskWord").innerHTML = "<small>Spoofing risk</small>" + verdict.risk[0].toUpperCase()+verdict.risk.slice(1);
+  $("riskSummary").textContent = verdict.summary;
+
+  const stampFor = (k,v) => {
+    const cls = v==="pass" ? "pass" : (v==="fail"||v==="softfail") ? "fail" : v ? "warn" : "none";
+    return `<div class="stamp ${cls}"><span class="k">${k}</span><span class="v">${esc((v||"absent").toUpperCase())}</span></div>`;
+  };
+  $("stamps").innerHTML = stampFor("SPF",auth.spf)+stampFor("DKIM",auth.dkim)+stampFor("DMARC",auth.dmarc);
+
+  $("findings").innerHTML = verdict.findings.map(f =>
+    `<li><span class="sev ${f.s}">${f.s}</span><span>${esc(f.t)}</span></li>`).join("");
+
+  /* --- origin card --- */
+  const oip = $("originIp"), okv = $("originKv");
+  if (origin){
+    oip.className = "ipbig";
+    oip.textContent = origin.observedIP;
+    const net = inferNetworkType(origin.fromHost) || inferNetworkType(origin.fromParen);
+    const prov = detectProvider(origin.fromHost) || detectProvider(origin.byHost);
+    const belowBoundary = origin.index > chain.boundary;
+    let rows = [
+      ["Address class", origin.ipInfo.label],
+      ["Announced name", origin.fromHost || "—"],
+      ["Reverse lookup", origin.fromParen || "—"],
+      ["Received by", origin.byHost || "—"],
+      ["Recorded at", origin.dateStr || "—"],
+      ["Standing", belowBoundary ? "Below the trust boundary — claimed only" : "Within verified custody"]
+    ];
+    if (net) rows.splice(1,0,["Network type", net.type]);
+    okv.innerHTML = rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+
+    let notes = "";
+    if (prov && prov.strips) notes += `<div class="note warnbox"><b>${esc(prov.name)} infrastructure.</b> This provider does not record the submitting client's address for webmail, so this is their outbound server, not the person who wrote the message. There is no origin IP to recover from these headers.</div>`;
+    else if (net) notes += `<div class="note">${esc(net.note)}</div>`;
+    if (belowBoundary) notes += `<div class="note warnbox">This address appears only in headers below the trust boundary. A sender who fabricates headers controls exactly this value, so do not report it as the origin without independent corroboration.</div>`;
+    if (origin.ipInfo.scope === "documentation") notes += `<div class="note">Reserved for examples and documentation. It will never appear in real mail and has no geolocation.</div>`;
+    if (xorigIP && xorigIP !== origin.observedIP) notes += `<div class="note">An <b>X-Originating-IP</b> header separately claims <b>${esc(xorigIP)}</b>. This header is written by the sender's own client or provider and is trivially forged — corroborate it against the Received chain before relying on it.</div>`;
+    okv.insertAdjacentHTML("afterend", "");
+    let holder = document.getElementById("originNotes");
+    if (!holder){ holder = document.createElement("div"); holder.id = "originNotes"; okv.after(holder); }
+    holder.innerHTML = notes;
+    $("geoBtn").disabled = !(origin.ipInfo.scope === "public");
+    $("geoBtn").textContent = origin.ipInfo.scope === "public" ? "Look up location" : "No location available for this range";
+  } else {
+    oip.className = "ipnone";
+    oip.textContent = "No routable address in the chain.";
+    okv.innerHTML = "";
+    const holder = document.getElementById("originNotes");
+    const msg = `<div class="note warnbox">Every hop reports a private, loopback, or carrier-NAT address. This is what you see when the message was composed in webmail, or when the headers were trimmed above the point where the public address was recorded.</div>`;
+    if (holder) holder.innerHTML = msg; else okv.insertAdjacentHTML("afterend", `<div id="originNotes">${msg}</div>`);
+    $("geoBtn").disabled = true;
+    $("geoBtn").textContent = "No address to look up";
+  }
+  $("geoKv").classList.add("hidden"); $("geoMsg").classList.add("hidden");
+
+  /* --- identity card --- */
+  const idRows = [
+    ["From", getOne(headers,"from")],
+    ["Reply-To", getOne(headers,"reply-to")],
+    ["Return-Path", getOne(headers,"return-path")],
+    ["Envelope for", hops.map(h=>h.forAddr).find(Boolean)],
+    ["Message-ID", getOne(headers,"message-id")],
+    ["Subject", getOne(headers,"subject")],
+    ["Composed", getOne(headers,"date")],
+    ["Client", getOne(headers,"x-mailer") || getOne(headers,"user-agent")]
+  ].filter(r=>r[1]);
+  $("identityKv").innerHTML = idRows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  $("identityNote").innerHTML = `<div class="note">The <b>From</b> line is display text chosen by the sender. Only <b>Return-Path</b> — the envelope sender — is what SPF actually checks, which is why the two can disagree in a message that still passes.</div>`;
+
+  /* --- the descent --- */
+  const chrono = hops.slice().reverse();
+  const parts = [];
+  hops.forEach((h,i) => {
+    if (i === chain.boundary + 1 && chain.boundary < hops.length - 1){
+      parts.push(`
+        <div class="seam">
+          <div class="seam-rule"></div>
+          <div class="seam-label">Trust boundary — nothing below is proven</div>
+        </div>
+        <p class="seam-sub">Custody is verifiable down to here. Every hop below was written before the message reached infrastructure you can vouch for, so a sender who forges headers controls all of it.</p>`);
+    }
+    const claimed = i > chain.boundary;
+    const prov = detectProvider(h.byHost) || detectProvider(h.fromHost);
+    const net  = h.observedIP ? (inferNetworkType(h.fromHost) || inferNetworkType(h.fromParen)) : null;
+    const tags = [];
+    if (prov) tags.push(`<span class="tag prov">${esc(prov.name)}</span>`);
+    if (h.ipInfo && !h.ipInfo.routable) tags.push(`<span class="tag priv">${esc(h.ipInfo.label)}</span>`);
+    if (net) tags.push(`<span class="tag ${net.cls}">${esc(net.type)}</span>`);
+    if (chain.breaks.some(b=>b.at===i)) tags.push(`<span class="tag gap">chain break</span>`);
+
+    const rows = [
+      ["Observed peer", h.observedIP || (h.internal ? "internal handoff" : "not recorded")],
+      ["Announced as", h.fromHost || "—"],
+      ["Reverse name", h.fromParen || "—"],
+      ["Handled by", h.byHost || "—"],
+      ["Protocol", h.proto || "—"],
+      ["Queue ID", h.queueId || "—"]
+    ].filter(r=>r[1] && r[1] !== "—" || r[0]==="Observed peer");
+
+    parts.push(`
+      <div class="hop ${claimed?"claimed":""} anim" style="animation-delay:${Math.min(i*45,360)}ms">
+        <div class="hop-head">
+          <span class="hopno">Hop ${hops.length - i}</span>
+          <span class="hop-title">${esc(h.fromHost || h.byHost || "unnamed")}</span>
+          <span class="hop-time">${esc(h.dateStr || "no timestamp")}</span>
+        </div>
+        <dl class="hop-body">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+        ${tags.length?`<div class="hop-foot">${tags.join("")}${
+          claimed?`<span>Asserted by the sender, not corroborated.</span>`:``}</div>`:
+          (claimed?`<div class="hop-foot"><span>Asserted by the sender, not corroborated.</span></div>`:``)}
+      </div>`);
+
+    // delay to the hop below (the previous one chronologically)
+    const next = hops[i+1];
+    if (next && next.date && h.date){
+      const d = h.date.getTime() - next.date.getTime();
+      const bad = d < -60000;
+      parts.push(`<div class="delay">${bad?"<b>":""}↑ ${fmtDelay(d)} between hops${bad?"</b>":""}</div>`);
+    }
+  });
+  $("chain").innerHTML = parts.join("");
+
+  /* --- raw --- */
+  $("rawList").innerHTML = headers.map(h =>
+    `<div class="rawrow"><dt>${esc(h.rawName)}</dt><dd>${esc(h.value)}</dd></div>`).join("");
+
+  $("aiOut").classList.add("hidden"); $("aiMsg").classList.add("hidden");
+}
+
+/* ============================================================
+   8. OPTIONAL NETWORK CALLS — everything above works without them
+   ============================================================ */
+async function lookupGeo(){
+  const ip = STATE && STATE.origin && STATE.origin.observedIP;
+  if (!ip) return;
+  const msg = $("geoMsg"), kv = $("geoKv");
+  kv.classList.add("hidden");
+  msg.classList.remove("hidden"); msg.className = "msg"; msg.textContent = "Looking up " + ip + "…";
+  const endpoints = [
+    { url:`https://ipwho.is/${encodeURIComponent(ip)}`, map:d => d && d.success===false ? null : ({
+        country:d.country, region:d.region, city:d.city,
+        coords:(d.latitude!=null?`${d.latitude}, ${d.longitude}`:null),
+        org:(d.connection&&(d.connection.org||d.connection.isp))||null,
+        asn:(d.connection&&d.connection.asn)?("AS"+d.connection.asn):null }) },
+    { url:`https://ipapi.co/${encodeURIComponent(ip)}/json/`, map:d => d && d.error ? null : ({
+        country:d.country_name, region:d.region, city:d.city,
+        coords:(d.latitude!=null?`${d.latitude}, ${d.longitude}`:null),
+        org:d.org||null, asn:d.asn||null }) }
+  ];
+  for (const ep of endpoints){
+    try {
+      const r = await fetch(ep.url, { headers:{ "Accept":"application/json" } });
+      if (!r.ok) continue;
+      const g = ep.map(await r.json());
+      if (!g) continue;
+      const rows = [
+        ["Country", g.country], ["Region", g.region], ["City", g.city],
+        ["Coordinates", g.coords], ["Network", g.org], ["ASN", g.asn]
+      ].filter(r=>r[1]);
+      if (!rows.length) continue;
+      kv.innerHTML = rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+      kv.classList.remove("hidden");
+      msg.className = "msg";
+      msg.textContent = "Country is dependable. City is a guess drawn from registry data, and is wrong often enough that it does not belong in a report on its own.";
+      return;
+    } catch(e){ /* try the next one */ }
+  }
+  msg.className = "msg err";
+  msg.textContent = "Lookup unavailable — offline, blocked by the network, or rate limited. Everything else on this page was computed locally and is unaffected.";
+}
+
+function textReport(){
+  const { verdict, auth, hops, chain, origin } = STATE;
+  const L = [];
+  L.push("ENVELOPE — HEADER ANALYSIS");
+  L.push("Generated " + new Date().toISOString());
+  L.push("");
+  L.push("SPOOFING RISK: " + verdict.risk.toUpperCase());
+  L.push(verdict.summary);
+  L.push("");
+  L.push(`AUTHENTICATION  spf=${auth.spf||"absent"}  dkim=${auth.dkim||"absent"}  dmarc=${auth.dmarc||"absent"}`);
+  L.push("");
+  L.push("CLAIMED ORIGIN: " + (origin ? `${origin.observedIP} (${origin.ipInfo.label}) announced as ${origin.fromHost||"—"}` : "none — no routable address in the chain"));
+  L.push(`TRUST BOUNDARY: custody verifiable through hop ${hops.length - chain.boundary} of ${hops.length}; ${hops.length-1-chain.boundary} hop(s) claimed only`);
+  L.push("");
+  L.push("FINDINGS");
+  verdict.findings.forEach(f => L.push(`  [${f.s.toUpperCase()}] ${f.t}`));
+  L.push("");
+  L.push("RELAY CHAIN (newest first)");
+  hops.forEach((h,i) => {
+    L.push(`  Hop ${hops.length-i}${i>chain.boundary?" [CLAIMED]":""}: ${h.observedIP||"no address"} | from ${h.fromHost||"—"} | by ${h.byHost||"—"} | ${h.dateStr||"no timestamp"}`);
+  });
+  return L.join("\n");
+}
+
+async function writeAssessment(){
+  const btn = $("aiBtn"), msg = $("aiMsg"), out = $("aiOut");
+  btn.disabled = true;
+  out.classList.add("hidden");
+  msg.classList.remove("hidden"); msg.className = "msg"; msg.textContent = "Writing…";
+  const prompt = `You are an email forensics analyst. Below is structured output from a header parser. Write a short assessment (3 short paragraphs, no headings, no bullet points) for a technical reader: what the chain shows, what can and cannot be concluded about origin, and what to do next. Be precise about the difference between what is proven and what is merely claimed. Do not invent details that are not in the data.
+
+${textReport()}`;
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    const text = (data.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n").trim();
+    if (!text) throw new Error("empty response");
+    out.textContent = text; out.classList.remove("hidden"); msg.classList.add("hidden");
+  } catch(e){
+    msg.className = "msg err";
+    msg.textContent = "Assessment unavailable — this needs a live connection to the Claude API, which is not reachable from a local file. The verdict and findings above were produced by the built-in rule engine and stand on their own.";
+  } finally { btn.disabled = false; }
+}
+
+/* ============================================================
+   9. SAMPLES
+   All addresses are drawn from RFC 5737 documentation ranges, so no
+   real network is implicated and no lookup will resolve.
+   ============================================================ */
+const SAMPLE_CLEAN = `Delivered-To: dalabi@example.com
+Received: by 2002:a05:6214:1a8c:b0:6b1:2f3a:9c11 with SMTP id fq12csp1204418qvz;
+        Tue, 5 Aug 2025 07:22:41 -0700 (PDT)
+X-Received: by 2002:a17:902:d4c:b0:1f5:1e2c:44a1 with SMTP id 7-20020a1709020d4c
+        mr9182734plt.12.1754403761234; Tue, 5 Aug 2025 07:22:41 -0700 (PDT)
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@meridiangrid.com header.s=s1 header.b=Qz7Kp2mV;
+       spf=pass (google.com: domain of ops@meridiangrid.com designates 198.51.100.24 as permitted sender) smtp.mailfrom=ops@meridiangrid.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=meridiangrid.com
+Return-Path: <ops@meridiangrid.com>
+Received: from mail.meridiangrid.com (mail.meridiangrid.com. [198.51.100.24])
+        by mx.google.com with ESMTPS id p14-20020a170902ea8e
+        for <dalabi@example.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384);
+        Tue, 5 Aug 2025 07:22:40 -0700 (PDT)
+Received: from [203.0.113.77] (host-77.static.meridian-broadband.net [203.0.113.77])
+        by mail.meridiangrid.com (Postfix) with ESMTPSA id 4Wq3Ll5xY2z
+        for <dalabi@example.com>; Tue, 5 Aug 2025 10:22:38 -0400 (EDT)
+Message-ID: <8f2c1d44-9b3e-4a1c-bb02-7d5e1a3f9c60@meridiangrid.com>
+Date: Tue, 5 Aug 2025 10:22:37 -0400
+From: Operations <ops@meridiangrid.com>
+To: dalabi@example.com
+Subject: Feeder 12 relay coordination review
+X-Mailer: Mozilla Thunderbird
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8`;
+
+const SAMPLE_SPOOF = `Delivered-To: dalabi@example.com
+Received: by 2002:a05:6214:1a8c:b0:6b1:2f3a:9c11 with SMTP id fq12csp7783120qvz;
+        Wed, 6 Aug 2025 02:14:09 -0700 (PDT)
+Authentication-Results: mx.google.com;
+       dkim=none;
+       spf=fail (google.com: domain of bounce-9931@vps-77.cheaphost-cluster.net does not designate 203.0.113.18 as permitted sender) smtp.mailfrom=bounce-9931@vps-77.cheaphost-cluster.net;
+       dmarc=fail (p=REJECT sp=REJECT dis=QUARANTINE) header.from=northfield-bank.com
+Received-SPF: fail (google.com: domain does not designate 203.0.113.18 as permitted sender) client-ip=203.0.113.18;
+Return-Path: <bounce-9931@vps-77.cheaphost-cluster.net>
+Received: from vps-77.cheaphost-cluster.net (vps-77.cheaphost-cluster.net. [203.0.113.18])
+        by mx.google.com with ESMTP id k9-20020a63f109
+        for <dalabi@example.com>;
+        Wed, 6 Aug 2025 02:14:08 -0700 (PDT)
+Received: from smtp-relay.northfield-bank.com (localhost [127.0.0.1])
+        by internal-mx-04.corp.local (Postfix) with ESMTP id 88AF31C2E9
+        for <dalabi@example.com>; Wed, 6 Aug 2025 12:31:52 +0000
+Received: from webmail.northfield-bank.com ([10.0.4.19])
+        by smtp-relay.northfield-bank.com with ESMTPA id 7712004
+        for <dalabi@example.com>; Wed, 6 Aug 2025 13:02:11 +0000
+Message-ID: <20250806.881237.verify@northfield-bank.com>
+Date: Wed, 6 Aug 2025 08:14:05 -0400
+From: "Northfield Bank Security" <security@northfield-bank.com>
+Reply-To: verify@northfield-bank-support.com
+To: dalabi@example.com
+Subject: Immediate verification required on your account
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8`;
+
+/* ============================================================
+   10. WIRING
+   ============================================================ */
+$("run").addEventListener("click", analyze);
+$("sample1").addEventListener("click", ()=>{ $("input").value = SAMPLE_CLEAN; analyze(); });
+$("sample2").addEventListener("click", ()=>{ $("input").value = SAMPLE_SPOOF; analyze(); });
+$("clear").addEventListener("click", ()=>{
+  $("input").value = ""; $("results").classList.add("hidden");
+  $("inputErr").classList.add("hidden"); $("input").focus();
+});
+$("geoBtn").addEventListener("click", lookupGeo);
+$("aiBtn").addEventListener("click", writeAssessment);
+$("copyBtn").addEventListener("click", async ()=>{
+  const btn = $("copyBtn");
+  try { await navigator.clipboard.writeText(textReport()); btn.textContent = "Copied"; }
+  catch(e){ btn.textContent = "Copy blocked — select the page text instead"; }
+  setTimeout(()=>{ btn.textContent = "Copy text report"; }, 2200);
+});
+$("input").addEventListener("keydown", e=>{
+  if ((e.metaKey||e.ctrlKey) && e.key === "Enter") analyze();
+});
+</script>
+</body>
+</html>
