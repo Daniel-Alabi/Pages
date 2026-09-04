@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factor Blaster</title>
+<style>
+  :root{
+    --board:#2b4a3e; --board-deep:#213b31; --chalk:#f2efe4; --chalk-dim:rgba(242,239,228,.55);
+    --p2:#f5d66b; --p3:#f1a7b6; --p5:#9dc7e8; --p7:#f2b27a; --bad:#e97c6c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--board-deep);color:var(--chalk);
+    font-family:"Trebuchet MS","Segoe UI",Helvetica,Arial,sans-serif}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px}
+  header{width:min(560px,100%);display:flex;justify-content:space-between;align-items:baseline}
+  h1{margin:0;font-size:1.5rem;font-weight:400;letter-spacing:.02em}
+  .hud{display:flex;gap:18px;font-size:1rem}
+  .hud b{font-weight:400;color:var(--chalk-dim);margin-right:4px}
+  .stage{position:relative;width:min(560px,100%)}
+  canvas{display:block;width:100%;background:var(--board);border-radius:6px;
+    box-shadow:inset 0 0 60px rgba(0,0,0,.35);border:6px solid #6b4a2e}
+  .overlay{position:absolute;inset:6px;border-radius:2px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:24px;
+    background:rgba(33,59,49,.9)}
+  .overlay p{max-width:36ch;line-height:1.5;margin:6px 0}
+  .overlay h2{font-weight:400;font-size:1.8rem;margin:0 0 8px}
+  button{font:inherit;color:var(--chalk);background:transparent;border:2px solid var(--chalk);
+    border-radius:4px;padding:8px 18px;cursor:pointer;margin-top:14px}
+  button:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+  .controls{width:min(560px,100%);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .primes{display:flex;gap:8px}
+  .prime{width:56px;height:56px;border-radius:50%;border:2px dashed var(--chalk-dim);
+    font-size:1.4rem;margin:0;padding:0;color:var(--chalk)}
+  .prime.on{border-style:solid;border-width:3px}
+  .prime[data-p="2"].on{border-color:var(--p2);color:var(--p2)}
+  .prime[data-p="3"].on{border-color:var(--p3);color:var(--p3)}
+  .prime[data-p="5"].on{border-color:var(--p5);color:var(--p5)}
+  .prime[data-p="7"].on{border-color:var(--p7);color:var(--p7)}
+  .move{display:flex;gap:8px}
+  .move button{margin:0;width:56px;height:56px;font-size:1.2rem}
+  .hint{font-size:.85rem;color:var(--chalk-dim);width:min(560px,100%);text-align:center}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Factor Blaster</h1>
+  <div class="hud"><span><b>Score</b><span id="score">0</span></span>
+    <span><b>Level</b><span id="level">1</span></span>
+    <span><b>Lives</b><span id="lives">♥♥♥</span></span></div>
+</header>
+<div class="stage">
+  <canvas id="c" width="560" height="620"></canvas>
+  <div class="overlay" id="start">
+    <h2>Factor Blaster</h2>
+    <p>Numbers are falling. Your cannon fires primes.</p>
+    <p>Hit a number with one of its factors and it divides. Divide it all the way down to 1 and it's gone. Fire a prime that doesn't divide it and the shot bounces off.</p>
+    <p>Move with ← → or A D, fire with space, switch primes with 1 2 3 4.</p>
+    <button id="play">Start playing</button>
+  </div>
+  <div class="overlay hidden" id="over">
+    <h2>Board wiped</h2>
+    <p id="final"></p>
+    <p id="best"></p>
+    <button id="again">Play again</button>
+  </div>
+</div>
+<div class="controls">
+  <div class="primes">
+    <button class="prime on" data-p="2">2</button>
+    <button class="prime" data-p="3">3</button>
+    <button class="prime" data-p="5">5</button>
+    <button class="prime" data-p="7">7</button>
+  </div>
+  <div class="move">
+    <button id="left" aria-label="Move left">←</button>
+    <button id="fire" aria-label="Fire">Fire</button>
+    <button id="right" aria-label="Move right">→</button>
+  </div>
+</div>
+<p class="hint">Tip: big even numbers are cheap — start with 2. Anything ending in 0 or 5 owes you a 5.</p>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=cv.width,H=cv.height;
+const COL={2:'#f5d66b',3:'#f1a7b6',5:'#9dc7e8',7:'#f2b27a'};
+const PRIMES=[2,3,5,7];
+let S;
+const el=id=>document.getElementById(id);
+
+function reset(){
+  S={score:0,lives:3,level:1,prime:2,ship:{x:W/2,vx:0},shots:[],rocks:[],fx:[],
+     spawnT:0,spawnEvery:170,fall:0.35,elapsed:0,running:true,streak:0};
+  setPrime(2);hud();
+}
+function hud(){
+  el('score').textContent=S.score;el('level').textContent=S.level;
+  el('lives').textContent='♥'.repeat(S.lives)+'♡'.repeat(3-S.lives);
+}
+function setPrime(p){
+  S.prime=p;
+  document.querySelectorAll('.prime').forEach(b=>b.classList.toggle('on',+b.dataset.p===p));
+}
+// Compose a number from small primes; harder levels use more factors.
+function newRock(){
+  const k=Math.min(2+Math.floor(S.level/2)+(Math.random()<.3?1:0),5);
+  let n=1,factors=[];
+  for(let i=0;i<k;i++){const p=PRIMES[Math.floor(Math.random()*PRIMES.length)];if(n*p>420)break;n*=p;factors.push(p);}
+  if(n===1){n=2;factors=[2];}
+  const r=18+Math.log2(n)*3.2;
+  S.rocks.push({n,orig:n,trail:[],x:r+Math.random()*(W-2*r),y:-r,r,vy:S.fall*(0.8+Math.random()*.5),
+    wob:Math.random()*6.28,spin:(Math.random()-.5)*.02,a:0});
+}
+function radius(n){return 18+Math.log2(n)*3.2;}
+
+function fire(){
+  if(!S.running)return;
+  S.shots.push({x:S.ship.x,y:H-58,vy:-7,p:S.prime});
+}
+const keys={};
+addEventListener('keydown',e=>{
+  if(e.repeat&&e.code==='Space')return;
+  keys[e.code]=true;
+  if(e.code==='Space'){e.preventDefault();fire();}
+  const i='1234'.indexOf(e.key);if(i>=0)setPrime(PRIMES[i]);
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+document.querySelectorAll('.prime').forEach(b=>b.onclick=()=>setPrime(+b.dataset.p));
+const hold=(id,code)=>{const b=el(id);const on=e=>{e.preventDefault();keys[code]=true};const off=()=>keys[code]=false;
+  b.onpointerdown=on;b.onpointerup=off;b.onpointerleave=off;b.onpointercancel=off;};
+hold('left','ArrowLeft');hold('right','ArrowRight');
+el('fire').onpointerdown=e=>{e.preventDefault();fire();};
+el('play').onclick=()=>{el('start').classList.add('hidden');reset();};
+el('again').onclick=()=>{el('over').classList.add('hidden');reset();};
+
+function pop(x,y,text,color,life=70){S.fx.push({x,y,text,color,life,max:life});}
+
+function update(){
+  if(!S||!S.running)return;
+  S.elapsed++;
+  // ship
+  const acc=(keys.ArrowLeft||keys.KeyA?-1:0)+(keys.ArrowRight||keys.KeyD?1:0);
+  S.ship.vx=S.ship.vx*.82+acc*1.2;
+  S.ship.x=Math.max(26,Math.min(W-26,S.ship.x+S.ship.vx));
+  // spawn
+  if(++S.spawnT>=S.spawnEvery){S.spawnT=0;newRock();}
+  // shots
+  S.shots.forEach(s=>s.y+=s.vy);
+  S.shots=S.shots.filter(s=>s.y>-10&&!s.dead);
+  // rocks
+  for(const r of S.rocks){
+    r.y+=r.vy;r.wob+=.03;r.a+=r.spin;
+    for(const s of S.shots){
+      if(s.dead)continue;
+      const dx=s.x-r.x,dy=s.y-r.y;
+      if(dx*dx+dy*dy<r.r*r.r){
+        s.dead=true;
+        if(r.n%s.p===0){
+          r.n/=s.p;r.trail.push(s.p);
+          r.r=radius(Math.max(r.n,2));
+          S.streak++;
+          if(r.n===1){
+            r.dead=true;
+            const pts=r.trail.length*10*(1+Math.floor(S.streak/5));
+            S.score+=pts;
+            pop(r.x,r.y,`${r.orig} = ${r.trail.join('·')}`,'#f2efe4',110);
+            pop(r.x,r.y-26,`+${pts}`,COL[s.p],70);
+          }else{
+            pop(r.x,r.y-r.r-6,`÷${s.p} → ${r.n}`,COL[s.p]);
+          }
+        }else{
+          S.streak=0;S.score=Math.max(0,S.score-2);
+          r.vy+=.12;
+          pop(r.x,r.y-r.r-6,`${s.p} ∤ ${r.n}`,'#e97c6c');
+        }
+      }
+    }
+    if(r.y-r.r>H-40&&!r.dead){
+      r.dead=true;S.lives--;S.streak=0;
+      pop(r.x,H-70,`${r.n} got through`,'#e97c6c',90);
+      if(S.lives<=0)gameOver();
+    }
+  }
+  S.rocks=S.rocks.filter(r=>!r.dead);
+  S.fx.forEach(f=>{f.life--;f.y-=.35;});
+  S.fx=S.fx.filter(f=>f.life>0);
+  // difficulty
+  const lv=1+Math.floor(S.score/150);
+  if(lv!==S.level){S.level=lv;S.fall=0.35+lv*.07;S.spawnEvery=Math.max(70,170-lv*12);pop(W/2,H/2,`Level ${lv}`,'#f2efe4',100);}
+  hud();
+}
+function gameOver(){
+  S.running=false;
+  const best=Math.max(S.score,+localStorage.getItem('fb-best')||0);
+  localStorage.setItem('fb-best',best);
+  el('final').textContent=`You scored ${S.score} and reached level ${S.level}.`;
+  el('best').textContent=`Best so far: ${best}.`;
+  el('over').classList.remove('hidden');
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // faint chalk grid
+  ctx.strokeStyle='rgba(242,239,228,.05)';ctx.lineWidth=1;
+  for(let x=40;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=40;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // baseline
+  ctx.strokeStyle='rgba(242,239,228,.35)';ctx.setLineDash([8,6]);
+  ctx.beginPath();ctx.moveTo(0,H-40);ctx.lineTo(W,H-40);ctx.stroke();ctx.setLineDash([]);
+  if(!S)return;
+  // rocks
+  for(const r of S.rocks){
+    ctx.save();ctx.translate(r.x+Math.sin(r.wob)*3,r.y);ctx.rotate(r.a);
+    ctx.strokeStyle='rgba(242,239,228,.85)';ctx.lineWidth=2.5;ctx.beginPath();
+    for(let i=0;i<9;i++){const ang=i/9*6.283,rr=r.r*(0.9+0.12*Math.sin(i*2.3+r.orig));
+      ctx.lineTo(Math.cos(ang)*rr,Math.sin(ang)*rr);}
+    ctx.closePath();ctx.stroke();ctx.restore();
+    ctx.fillStyle='#f2efe4';ctx.font=`${Math.max(16,r.r*.9)}px "Trebuchet MS",sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(r.n,r.x+Math.sin(r.wob)*3,r.y+1);
+    // factors already knocked off, as small chalk marks
+    r.trail.forEach((p,i)=>{ctx.fillStyle=COL[p];ctx.beginPath();
+      ctx.arc(r.x-r.r+8+i*11,r.y+r.r+9,3.5,0,6.28);ctx.fill();});
+  }
+  // shots
+  for(const s of S.shots){
+    ctx.fillStyle=COL[s.p];ctx.beginPath();ctx.arc(s.x,s.y,9,0,6.28);ctx.fill();
+    ctx.fillStyle='#213b31';ctx.font='bold 12px "Trebuchet MS",sans-serif';ctx.fillText(s.p,s.x,s.y+1);
+  }
+  // ship: a chalk cannon
+  const x=S.ship.x,y=H-40;
+  ctx.strokeStyle='#f2efe4';ctx.lineWidth=2.5;ctx.beginPath();
+  ctx.moveTo(x-24,y);ctx.lineTo(x-14,y-18);ctx.lineTo(x+14,y-18);ctx.lineTo(x+24,y);ctx.closePath();ctx.stroke();
+  ctx.strokeStyle=COL[S.prime];ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,y-18);ctx.lineTo(x,y-38);ctx.stroke();
+  ctx.fillStyle=COL[S.prime];ctx.beginPath();ctx.arc(x,y-42,8,0,6.28);ctx.fill();
+  ctx.fillStyle='#213b31';ctx.font='bold 11px "Trebuchet MS",sans-serif';ctx.fillText(S.prime,x,y-41);
+  // fx
+  for(const f of S.fx){
+    ctx.globalAlpha=Math.min(1,f.life/f.max*1.6);ctx.fillStyle=f.color;
+    ctx.font='16px "Trebuchet MS",sans-serif';ctx.fillText(f.text,f.x,f.y);ctx.globalAlpha=1;
+  }
+  if(S.streak>=5){ctx.fillStyle='rgba(242,239,228,.6)';ctx.font='14px "Trebuchet MS",sans-serif';
+    ctx.textAlign='right';ctx.fillText(`${S.streak} clean hits · ×${1+Math.floor(S.streak/5)}`,W-12,20);}
+}
+function loop(){update();draw();requestAnimationFrame(loop);}
+draw();loop();
+</script>
+</body>
+</html>
