@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City cost comparator</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2F4; --panel:#FFFFFF; --ink:#1C2A33; --ink-2:#5B6B75; --line:#D5DDE2;
+  --housing:#4C6E8C; --green:#3F7D5A; --green-soft:#E3EFE7; --warn:#B4532A; --warn-soft:#F6E6DE;
+  --radius:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Public Sans",system-ui,sans-serif;font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header h1{font-size:30px;font-weight:700;letter-spacing:-0.01em;margin:0 0 6px}
+header p{margin:0;color:var(--ink-2);max-width:62ch}
+.layout{display:grid;grid-template-columns:280px 1fr;gap:22px;margin-top:26px}
+@media (max-width:820px){.layout{grid-template-columns:1fr}}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;align-self:start;position:sticky;top:14px}
+.side h2,.main h2{font-size:15px;font-weight:600;margin:0 0 10px}
+.search{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);font:inherit;background:#F7F9FA}
+.search:focus,button:focus-visible,input:focus{outline:2px solid var(--housing);outline-offset:1px}
+.citylist{list-style:none;margin:10px 0 0;padding:0;max-height:46vh;overflow:auto;border-top:1px solid var(--line)}
+.citylist li{border-bottom:1px solid var(--line)}
+.citylist label{display:flex;gap:9px;align-items:center;padding:7px 4px;cursor:pointer}
+.citylist label:hover{background:#F3F6F8}
+.citylist input{accent-color:var(--housing);width:15px;height:15px}
+.citylist .st{color:var(--ink-2);font-size:13px;margin-left:auto}
+.lookup{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.lookup p{margin:0 0 8px;font-size:13px;color:var(--ink-2)}
+.row{display:flex;gap:6px}
+button{font:inherit;font-weight:600;border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:var(--radius);padding:8px 12px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button:disabled{opacity:.5;cursor:default}
+.status{font-size:13px;color:var(--ink-2);margin-top:8px;min-height:18px}
+.status.err{color:var(--warn)}
+.income{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.income label{font-size:13px;color:var(--ink-2);display:block;margin-bottom:5px}
+.income input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius);font:inherit}
+
+.main{min-width:0}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);padding:40px 24px;color:var(--ink-2);text-align:center}
+.tablewrap{overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+thead th{font-weight:600;border-bottom:2px solid var(--ink);white-space:nowrap}
+thead th .rm{display:block;font-size:12px;font-weight:400;color:var(--ink-2);cursor:pointer;background:none;border:0;padding:0;margin-top:2px}
+tbody th{font-weight:500;color:var(--ink-2);white-space:nowrap;width:190px}
+tbody th small{display:block;font-weight:400;font-size:12px}
+.cell{display:flex;flex-direction:column;gap:4px;min-width:120px}
+.val{font-weight:600;font-variant-numeric:tabular-nums}
+.bar{height:7px;background:#E6EBEE;border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--housing);border-radius:4px}
+.bar.g i{background:var(--green)}
+.bar.w i{background:var(--warn)}
+.best{color:var(--green)}
+.note{font-size:12px;color:var(--ink-2);margin:8px 2px 0}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.card h3{margin:0 0 2px;font-size:18px;font-weight:700}
+.card .sub{color:var(--ink-2);font-size:13px;margin:0 0 12px}
+.card h4{font-size:13px;font-weight:600;margin:12px 0 5px;padding-left:9px;border-left:3px solid var(--line)}
+.card h4.g{border-color:var(--green)}
+.card h4.w{border-color:var(--warn)}
+.card ul{margin:0;padding-left:18px}
+.card li{margin:3px 0}
+.card p{margin:0}
+.tag{display:inline-block;font-size:12px;padding:2px 7px;border-radius:3px;background:var(--green-soft);color:#245E3C;margin-left:6px;vertical-align:middle}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .35s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>City cost comparator</h1>
+  <p>Pick the cities you live in or are eyeing. Compare housing and everyday costs side by side, then read what each place does well and what wears people down.</p>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <h2>Cities</h2>
+    <input class="search" id="q" placeholder="Filter list…" aria-label="Filter cities">
+    <ul class="citylist" id="list"></ul>
+
+    <div class="income">
+      <label for="inc">Your annual household income (optional)</label>
+      <input id="inc" type="number" placeholder="e.g. 120000" min="0" step="1000">
+    </div>
+
+    <div class="lookup">
+      <p>City not listed? Ask Claude to build a profile for it.</p>
+      <div class="row">
+        <input class="search" id="lk" placeholder="e.g. Boise, ID" aria-label="City to look up">
+        <button id="lkbtn">Add</button>
+      </div>
+      <div class="status" id="lkstat"></div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div id="out"></div>
+  </section>
+</div>
+</div>
+
+<script>
+// Approximate 2025 figures for orientation, not an offer sheet. home = median home price (USD), rent = median 1-bedroom rent (USD/mo),
+// col = cost-of-living index (100 = US average), income = median household income (USD), tax = top state (+city) income-tax rate (%),
+// park = share of residents within a 10-minute walk of a park (%, ParkScore-style).
+const CITIES = [
+ {id:"gnv",name:"Gainesville",state:"FL",home:300000,rent:1350,col:95,income:47000,tax:0,park:55,
+  green:"Paynes Prairie Preserve, Devil's Millhopper, Sweetwater Wetlands, and a dense canopy of live oaks. Springs within an hour in every direction.",
+  pros:["University of Florida drives research, healthcare, and steady jobs","Low housing cost for a college town","No state income tax"],
+  cons:["Job market thin outside UF, Shands, and a few tech firms","Hot, humid summers with heavy rain","Small airport; most flights connect through Atlanta or Orlando"]},
+ {id:"jax",name:"Jacksonville",state:"FL",home:305000,rent:1350,col:97,income:65000,tax:0,park:44,
+  green:"Largest urban park system in the US by acreage: Timucuan Preserve, Hanna Park, and 22 miles of beaches.",
+  pros:["Affordable for a large coastal metro","Beaches and river access without Miami prices","Growing logistics, finance, and healthcare employers"],
+  cons:["Very spread out; car-dependent","Public transit and walkability are weak","Hurricane exposure and rising insurance premiums"]},
+ {id:"tpa",name:"Tampa",state:"FL",home:420000,rent:1700,col:103,income:68000,tax:0,park:68,
+  green:"Riverwalk, Bayshore Boulevard, Lettuce Lake, and Hillsborough River State Park.",
+  pros:["Strong job growth in finance, health, and defense","Warm Gulf beaches nearby","No state income tax"],
+  cons:["Home prices and insurance rose sharply since 2020","Traffic and limited transit","Direct hurricane risk; flood zones common"]},
+ {id:"orl",name:"Orlando",state:"FL",home:390000,rent:1650,col:102,income:68000,tax:0,park:62,
+  green:"Lake Eola, Wekiwa Springs, and hundreds of lakes; Orlando Wetlands and the Econ River outside town.",
+  pros:["Major airport with cheap direct flights","Diverse economy: tourism, simulation, aerospace, health","No state income tax"],
+  cons:["Wages lag housing costs; many service-sector jobs","Sprawl and tourist traffic","Summers are long and oppressive"]},
+ {id:"mia",name:"Miami",state:"FL",home:600000,rent:2500,col:118,income:60000,tax:0,park:91,
+  green:"Biscayne Bay, Everglades National Park an hour away, Oleta River, and a long beachfront.",
+  pros:["International business and finance hub","Year-round warmth and world-class beaches","No state income tax"],
+  cons:["Rent-to-income ratio among the worst in the US","Flood, sea-level, and hurricane risk push insurance up","Heavy traffic and thin transit"]},
+ {id:"atl",name:"Atlanta",state:"GA",home:400000,rent:1650,col:100,income:80000,tax:5.39,park:78,
+  green:"Piedmont Park, the BeltLine, and one of the densest urban tree canopies of any big US city.",
+  pros:["Huge job market: Fortune 500 HQs, logistics, fintech, film","World's busiest airport with direct flights everywhere","Affordable for a city its size"],
+  cons:["Traffic is among the worst in the country","Transit (MARTA) covers only part of the metro","Summer heat and humidity"]},
+ {id:"clt",name:"Charlotte",state:"NC",home:400000,rent:1550,col:98,income:75000,tax:4.25,park:42,
+  green:"Freedom Park, Lake Norman, and the US National Whitewater Center; mountains and coast within 3 hours.",
+  pros:["Second-largest US banking center; strong finance jobs","Moderate cost of living and mild winters","Fast-growing, newer housing stock"],
+  cons:["Poor park access and walkability for a city its size","Rapid growth strains roads and schools","Limited cultural depth compared with older cities"]},
+ {id:"rdu",name:"Raleigh",state:"NC",home:430000,rent:1450,col:97,income:80000,tax:4.25,park:60,
+  green:"Umstead State Park, the Neuse River greenway, and Jordan Lake; heavy tree cover across the Triangle.",
+  pros:["Research Triangle: tech, biotech, and three major universities","Good schools and family-friendly suburbs","Reasonable housing for a tech hub"],
+  cons:["Car-dependent, weak transit","Nightlife and urban energy are modest","Prices climbed quickly with in-migration"]},
+ {id:"bna",name:"Nashville",state:"TN",home:450000,rent:1600,col:100,income:72000,tax:0,park:44,
+  green:"Percy Warner and Radnor Lake parks; Cumberland River greenways.",
+  pros:["No state income tax","Booming healthcare and entertainment economy","Distinct music and food culture"],
+  cons:["Housing outpaced wages over the last decade","Weak transit and growing congestion","Tourist crowds downtown"]},
+ {id:"aus",name:"Austin",state:"TX",home:450000,rent:1500,col:103,income:86000,tax:0,park:68,
+  green:"Zilker Park, Barton Springs, Lady Bird Lake trail, and the Hill Country to the west.",
+  pros:["Deep tech job market","No state income tax","Outdoor and live-music culture"],
+  cons:["High property taxes offset the income-tax break","Summers regularly exceed 100°F","Traffic and sprawl; housing cooled but remains pricey"]},
+ {id:"dal",name:"Dallas",state:"TX",home:400000,rent:1450,col:100,income:65000,tax:0,park:74,
+  green:"White Rock Lake, Trinity River corridor, Katy Trail, and the Great Trinity Forest.",
+  pros:["Very large, diversified job market","Two major airports","No state income tax and relatively affordable homes"],
+  cons:["Property taxes are high","Heat, hail, and flat, car-first sprawl","Walkable neighborhoods are few"]},
+ {id:"hou",name:"Houston",state:"TX",home:330000,rent:1300,col:95,income:62000,tax:0,park:58,
+  green:"Memorial and Hermann Parks, Buffalo Bayou, and the Arboretum; Gulf beaches an hour away.",
+  pros:["Cheapest big-city housing in the US","Energy, medical center, and aerospace employers","Exceptional food scene"],
+  cons:["Flooding and hurricane risk","Humidity, mosquitoes, and long commutes","No zoning; neighborhoods vary block to block"]},
+ {id:"den",name:"Denver",state:"CO",home:560000,rent:1750,col:112,income:90000,tax:4.4,park:90,
+  green:"City Park, Washington Park, Cherry Creek trail, and the Rockies less than an hour west.",
+  pros:["300 sunny days and easy mountain access","Strong aerospace, tech, and healthcare jobs","Good light-rail for a western city"],
+  cons:["Housing costs well above the national average","Altitude and dry air take adjustment","Traffic on I-70 to the mountains on weekends"]},
+ {id:"phx",name:"Phoenix",state:"AZ",home:430000,rent:1450,col:103,income:75000,tax:2.5,park:68,
+  green:"South Mountain and Camelback preserves, Papago Park, and desert trails inside the city.",
+  pros:["Flat 2.5% state income tax","Semiconductor and healthcare job growth","Mild winters and big-sky sunsets"],
+  cons:["Summer highs above 110°F for weeks","Water supply is a long-term concern","Sprawl and heavy car dependence"]},
+ {id:"slc",name:"Salt Lake City",state:"UT",home:560000,rent:1500,col:108,income:80000,tax:4.55,park:80,
+  green:"Wasatch canyons minutes from downtown, Liberty Park, and world-class ski resorts within 40 minutes.",
+  pros:["Skiing and hiking on the doorstep","Strong tech corridor and low unemployment","Good light-rail and compact downtown"],
+  cons:["Winter inversion traps some of the worst air in the US","Housing costs rose fast","Cultural homogeneity can feel limiting"]},
+ {id:"sea",name:"Seattle",state:"WA",home:850000,rent:2150,col:135,income:120000,tax:0,park:96,
+  green:"Discovery Park, Washington Park Arboretum, Puget Sound shoreline, and the Cascades and Olympics nearby.",
+  pros:["No state income tax on wages","Top tech salaries","Mountains, water, and mild summers"],
+  cons:["Housing among the most expensive in the country","Gray, drizzly November-to-April stretch","High sales tax and visible homelessness downtown"]},
+ {id:"pdx",name:"Portland",state:"OR",home:530000,rent:1600,col:115,income:85000,tax:9.9,park:87,
+  green:"Forest Park (5,000 acres in the city), Willamette waterfront, and the Columbia Gorge 40 minutes away.",
+  pros:["Bike- and transit-friendly with walkable neighborhoods","No sales tax","Coffee, food, and outdoor culture"],
+  cons:["High state income tax","Downtown struggled after 2020; homelessness is visible","Long gray winters"]},
+ {id:"sfo",name:"San Francisco",state:"CA",home:1300000,rent:3100,col:170,income:137000,tax:13.3,park:100,
+  green:"Golden Gate Park, the Presidio, Lands End, and Marin Headlands across the bridge.",
+  pros:["Highest tech wages and densest startup network","Walkable, transit-rich, compact","Mild year-round climate"],
+  cons:["Extreme housing costs; median home over $1.2M","Highest state income tax in the US","Property crime and street conditions in some districts"]},
+ {id:"lax",name:"Los Angeles",state:"CA",home:950000,rent:2400,col:150,income:80000,tax:13.3,park:65,
+  green:"Griffith Park, Santa Monica Mountains, and 70 miles of beaches.",
+  pros:["Entertainment, aerospace, and trade industries","Beach-to-mountains in a day","Unmatched food diversity"],
+  cons:["Housing costs far outrun the median wage","Traffic is a daily tax on time","Wildfire and earthquake risk; high insurance"]},
+ {id:"san",name:"San Diego",state:"CA",home:950000,rent:2500,col:145,income:100000,tax:13.3,park:80,
+  green:"Balboa Park, Torrey Pines, Mission Bay, and beaches across the whole coast.",
+  pros:["Arguably the best year-round climate in the US","Biotech, defense, and university jobs","Safer and calmer than LA"],
+  cons:["Housing almost as expensive as LA","High state income tax","Water and wildfire pressures"]},
+ {id:"chi",name:"Chicago",state:"IL",home:340000,rent:1800,col:105,income:75000,tax:4.95,park:98,
+  green:"Lakefront trail, Lincoln and Grant Parks, and 26 miles of public beaches.",
+  pros:["Big-city amenities at a fraction of coastal prices","Excellent transit and walkable neighborhoods","Two airports; central for travel"],
+  cons:["Property taxes are steep and the state has fiscal strain","Winters are long and cold","Crime concentrated in certain areas colors the reputation"]},
+ {id:"msp",name:"Minneapolis",state:"MN",home:330000,rent:1350,col:100,income:76000,tax:9.85,park:99,
+  green:"Chain of Lakes, Minnehaha Falls, and the Grand Rounds parkway; consistently ranked the best park system in the US.",
+  pros:["Top-rated parks and bike infrastructure","Strong healthcare, corporate, and medtech jobs","Affordable and civic-minded"],
+  cons:["Brutal winters from November through March","High state income tax","Regional airport hub but far from either coast"]},
+ {id:"bos",name:"Boston",state:"MA",home:800000,rent:2900,col:150,income:95000,tax:5,park:100,
+  green:"Emerald Necklace, Boston Common, the Charles River Esplanade, and Harbor Islands.",
+  pros:["Biotech, education, and healthcare capital","Walkable, historic, transit-served","Top hospitals and universities"],
+  cons:["Rents rival New York's","Old transit (MBTA) is unreliable","Cold, damp winters and a reserved social scene"]},
+ {id:"nyc",name:"New York",state:"NY",home:780000,rent:3600,col:175,income:80000,tax:14.8,park:99,
+  green:"Central and Prospect Parks, the High Line, and waterfront greenways on every borough.",
+  pros:["Largest job market and cultural scene in the US","No car needed; 24-hour transit","Every cuisine, industry, and community"],
+  cons:["Highest rents in the country; small spaces","Combined state and city income tax near 15% at the top","Noise, crowds, and a punishing pace"]},
+ {id:"dca",name:"Washington",state:"DC",home:650000,rent:2300,col:145,income:105000,tax:10.75,park:99,
+  green:"Rock Creek Park, the National Mall, and the C&O Canal towpath.",
+  pros:["Stable federal, defense, and consulting employment","Excellent Metro and walkable core","Free museums and international community"],
+  cons:["High housing costs and district income tax","Job market swings with federal budgets","Humid summers and transient social fabric"]},
+ {id:"pit",name:"Pittsburgh",state:"PA",home:240000,rent:1250,col:92,income:62000,tax:3.07,park:90,
+  green:"Frick, Schenley, and Riverview Parks; three rivers and steep wooded hillsides through the city.",
+  pros:["Among the cheapest homes of any major US city","Robotics, AI, and medicine anchored by CMU and UPMC","Distinct neighborhoods and easy commutes"],
+  cons:["Gray skies and hilly, aging infrastructure","Slow population growth","Winters are cold and salty"]},
+ {id:"cmh",name:"Columbus",state:"OH",home:290000,rent:1250,col:92,income:65000,tax:3.5,park:70,
+  green:"Scioto Mile, Metro Parks system, and Hocking Hills an hour away.",
+  pros:["Intel and tech investment driving growth","Affordable homes and low taxes","Big university and stable insurance/retail HQs"],
+  cons:["Flat, unremarkable landscape","Weak transit; car-dependent","Cold, gray winters"]},
+ {id:"hsv",name:"Huntsville",state:"AL",home:330000,rent:1200,col:92,income:70000,tax:5,park:45,
+  green:"Monte Sano State Park, the Land Trust trails, and the Tennessee River.",
+  pros:["NASA, Army, and defense contractors; high engineer density","Very low cost of living for the salaries on offer","Fast-growing with new amenities"],
+  cons:["Small city feel; limited nightlife and flights","Car-dependent","Alabama's state politics and services are a drawback for some"]},
+];
+let custom = [];
+const sel = new Set(["gnv","aus","den"]);
+
+const $ = s=>document.querySelector(s);
+const fmt$ = n=>"$"+Math.round(n).toLocaleString();
+const all = ()=>[...CITIES, ...custom];
+
+function renderList(){
+  const q = $("#q").value.trim().toLowerCase();
+  $("#list").innerHTML = all().filter(c=>!q||(c.name+" "+c.state).toLowerCase().includes(q))
+    .map(c=>`<li><label><input type="checkbox" data-id="${c.id}" ${sel.has(c.id)?"checked":""}>${c.name}${c.custom?'<span class="tag">Claude</span>':""}<span class="st">${c.state}</span></label></li>`).join("");
+}
+$("#list").addEventListener("change",e=>{const id=e.target.dataset.id; if(!id)return; e.target.checked?sel.add(id):sel.delete(id); render();});
+$("#q").addEventListener("input",renderList);
+$("#inc").addEventListener("input",render);
+
+function render(){
+  renderList();
+  const cs = all().filter(c=>sel.has(c.id));
+  const out = $("#out");
+  if(!cs.length){ out.innerHTML = `<div class="empty">Choose at least one city from the list to start comparing.</div>`; return; }
+  const inc = +$("#inc").value || 0;
+  const metrics = [
+    {k:"home",label:"Median home price",f:fmt$,lowGood:true},
+    {k:"rent",label:"Median 1-bedroom rent",sub:"per month",f:fmt$,lowGood:true},
+    ...(inc?[{k:"burden",label:"Rent as share of your income",f:v=>v.toFixed(0)+"%",lowGood:true,cls:"w",calc:c=>c.rent*12/inc*100}]:[]),
+    {k:"col",label:"Cost-of-living index",sub:"US average = 100",f:v=>v,lowGood:true},
+    {k:"income",label:"Median household income",f:fmt$,lowGood:false},
+    {k:"afford",label:"Home price ÷ household income",sub:"years of income; lower is easier",f:v=>v.toFixed(1)+"×",lowGood:true,calc:c=>c.home/c.income},
+    {k:"tax",label:"Top state income tax",f:v=>v+"%",lowGood:true},
+    {k:"park",label:"Residents near a park",sub:"within a 10-minute walk",f:v=>v+"%",lowGood:false,cls:"g"},
+  ];
+  const head = `<tr><th></th>${cs.map(c=>`<th>${c.name}, ${c.state}<button class="rm" data-id="${c.id}">remove</button></th>`).join("")}</tr>`;
+  const rows = metrics.map(m=>{
+    const vals = cs.map(c=>m.calc?m.calc(c):c[m.k]);
+    const max = Math.max(...vals,0.0001);
+    const best = m.lowGood?Math.min(...vals):Math.max(...vals);
+    return `<tr><th>${m.label}${m.sub?`<small>${m.sub}</small>`:""}</th>${vals.map(v=>`<td><div class="cell"><span class="val ${cs.length>1&&v===best?"best":""}">${m.f(v)}</span><div class="bar ${m.cls||""}"><i style="width:${v/max*100}%"></i></div></div></td>`).join("")}</tr>`;
+  }).join("");
+  const cards = cs.map(c=>`<article class="card"><h3>${c.name}, ${c.state}</h3><p class="sub">${c.custom?"Profile generated by Claude — verify before deciding.":"Built-in profile"}</p>
+    <h4 class="g">Green space</h4><p>${c.green}</p>
+    <h4 class="g">Why people move here</h4><ul>${c.pros.map(p=>`<li>${p}</li>`).join("")}</ul>
+    <h4 class="w">What wears people down</h4><ul>${c.cons.map(p=>`<li>${p}</li>`).join("")}</ul></article>`).join("");
+  out.innerHTML = `<h2>${cs.length===1?"Snapshot":"Side by side"}</h2><div class="tablewrap"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>
+    <p class="note">Green values mark the most favorable city in each row. Figures are approximate 2025 medians meant for orientation; check current listings before making a move.</p>
+    <div class="cards">${cards}</div>`;
+  out.querySelectorAll(".rm").forEach(b=>b.onclick=()=>{sel.delete(b.dataset.id);render();});
+}
+
+// AI lookup for cities not in the built-in list
+$("#lkbtn").onclick = async ()=>{
+  const name = $("#lk").value.trim(); if(!name) return;
+  const st = $("#lkstat"); st.className="status"; st.textContent="Asking Claude about "+name+"…"; $("#lkbtn").disabled=true;
+  try{
+    const r = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        messages:[{role:"user",content:`Build a cost-of-living profile for the city "${name}". Use web search for current figures. Respond with ONLY a JSON object, no prose, no markdown fences, with keys:
+name (city name), state (state or country abbreviation), home (median home price USD, integer), rent (median 1-bedroom rent USD per month, integer), col (cost-of-living index where US average = 100, integer), income (median household income USD, integer), tax (top marginal state or national income tax rate as a percent number), park (percent of residents within a 10-minute walk of a park, integer estimate), green (one sentence naming the main parks, trails, or natural areas), pros (array of 3 short strings: main benefits of living there), cons (array of 3 short strings: main downsides).`}]})});
+    const d = await r.json();
+    const text = (d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    const json = text.slice(text.indexOf("{"), text.lastIndexOf("}")+1);
+    const c = JSON.parse(json);
+    ["home","rent","col","income","tax","park"].forEach(k=>c[k]=+c[k]||0);
+    c.id = "c_"+Date.now(); c.custom = true;
+    custom.push(c); sel.add(c.id); $("#lk").value=""; st.textContent="Added "+c.name+".";
+    render();
+  }catch(e){ st.className="status err"; st.textContent="Couldn't build a profile for that city. Try adding the state or country, e.g. \"Boise, ID\"."; console.error(e); }
+  finally{ $("#lkbtn").disabled=false; }
+};
+
+render();
+</script>
+</body>
+</html>
